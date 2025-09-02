@@ -368,10 +368,46 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--sb-sky);
+  background: var(--sb-midnight);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sb-carrot);
+}
+
+/* Tooltip Styling */
+.tooltip {
+  font-size: 0.875rem;
+}
+
+.tooltip .tooltip-inner {
+  background-color: var(--sb-white);
+  color: var(--sb-midnight-text);
+  border: 1px solid var(--sb-pistachio-text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  max-width: 250px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+  border-top-color: var(--sb-pistachio-text);
+}
+
+.tooltip.bs-tooltip-right .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
+  border-right-color: var(--sb-pistachio-text);
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+  border-bottom-color: var(--sb-pistachio-text);
+}
+
+.tooltip.bs-tooltip-left .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+  border-left-color: var(--sb-pistachio-text);
 }
