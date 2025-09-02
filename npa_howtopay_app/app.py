@@ -29,12 +29,15 @@ def create_input_with_tooltip(input_id, label, value, tooltip):
 app_ui = ui.page_sidebar(
   ui.sidebar(
     ui.card(
-      ui.input_selectize("run_name", "Select Default Settings", choices=run_name_choices, selected='sample'),
+      ui.tooltip(
+        ui.input_selectize("run_name", ui.h4("Select Default Settings"), choices=run_name_choices, selected='sample'),
+        "Select a scenario to fill default parameter values for the entire simulation. You can always modify the values later. Any changes you have made will be lost when you change scenarios."
+      ),
       ui.output_text("selected_description"),
     ),
     ui.card(
     ui.navset_tab(
-      ui.nav_panel("Pipeline", ui.h2("Pipeline Economics"),
+      ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
         create_input_with_tooltip("lpp_cost", "Pipeline Replacement Cost", 
                                  get_config_value(config, PIPELINE_INPUTS["lpp_cost"]["config_path"]), 
@@ -45,7 +48,7 @@ app_ui = ui.page_sidebar(
         create_input_with_tooltip("pipeline_maintenance_cost_pct", "Maintenance Cost (%)", 
                                  get_config_value(config, PIPELINE_INPUTS["pipeline_maintenance_cost_pct"]["config_path"]), 
                                  PIPELINE_INPUTS["pipeline_maintenance_cost_pct"]["tooltip"]),
-        ui.h2("NPA Program"),
+        ui.h4("NPA Program"),
         # NPA Program inputs
         create_input_with_tooltip("npa_install_costs_init", "NPA Cost per Household", 
                                  get_config_value(config, PIPELINE_INPUTS["npa_install_costs_init"]["config_path"]), 
@@ -63,7 +66,7 @@ app_ui = ui.page_sidebar(
                                  get_config_value(config, PIPELINE_INPUTS["hp_peak_kw"]["config_path"]), 
                                  PIPELINE_INPUTS["hp_peak_kw"]["tooltip"]),
       ),
-      ui.nav_panel("Electric", ui.h2("Electric Utility Financials"),
+      ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         # Generate all electric inputs with tooltips
         *[create_input_with_tooltip(input_id, 
                                    # Convert input_id to readable label
@@ -72,7 +75,7 @@ app_ui = ui.page_sidebar(
                                    input_data["tooltip"]) 
           for input_id, input_data in ELECTRIC_INPUTS.items()],
       ),
-      ui.nav_panel("Gas", ui.h2("Gas"),
+      ui.nav_panel("Gas", ui.h4("Gas"),
         # Generate all gas inputs with tooltips
         *[create_input_with_tooltip(input_id, 
                                    input_id.replace('_', ' ').title().replace('Init', '').replace('Pct', '(%)').replace('Lpp', 'LPP'),
@@ -80,7 +83,7 @@ app_ui = ui.page_sidebar(
                                    input_data["tooltip"]) 
           for input_id, input_data in GAS_INPUTS.items()],
       ),
-      ui.nav_panel("Financials", ui.h2("Inflation"),
+      ui.nav_panel("Financials", ui.h4("Inflation"),
         # Generate financial inputs with tooltips
         *[create_input_with_tooltip(input_id, 
                                    input_id.replace('_', ' ').title().replace('Pct', '(%)'),
@@ -88,10 +91,10 @@ app_ui = ui.page_sidebar(
                                    input_data["tooltip"]) 
           for input_id, input_data in FINANCIAL_INPUTS.items()],
       ),
-        ui.nav_panel("Growth", ui.h1("Growth"))
+        ui.nav_panel("Growth", ui.h4("Growth"))
       ),
     ),
-  ),
+  width="20%"),
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
