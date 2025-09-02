@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "/Users/alexsmith/Documents/switchbox/npa-howtopay-app/npa_howtopay_app",
+        "app_url": "https://switchbox.shinyapps.io/npa_how_to_pay_app/",
+        "app_id": "15329291",
+        "app_guid": null,
+        "title": "NPA How to Pay App",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}
