@@ -1,5 +1,6 @@
 import plotly.express as px
 import polars as pl
+from pathlib import Path
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui
 
@@ -11,6 +12,8 @@ from modules.input_mappings import (
 )
 from modules.plotting import plot_ratebase, plot_grid
 
+
+css_file = Path(__file__).parent / "styles.css"
 # Load configurations
 all_configs = load_all_configs()
 run_name_choices = {name: name for name in all_configs.keys()}
@@ -25,10 +28,13 @@ def create_input_with_tooltip(input_id, label, value, tooltip):
 
 app_ui = ui.page_sidebar(
   ui.sidebar(
-    ui.input_selectize("run_name", "Select Default Settings", choices=run_name_choices, selected='sample'),
-    ui.output_text("selected_description"),
+    ui.card(
+      ui.input_selectize("run_name", "Select Default Settings", choices=run_name_choices, selected='sample'),
+      ui.output_text("selected_description"),
+    ),
+    ui.card(
     ui.navset_tab(
-      ui.nav_panel("pipeline", ui.h2("Pipeline Economics"),
+      ui.nav_panel("Pipeline", ui.h2("Pipeline Economics"),
         # Pipeline Economics inputs
         create_input_with_tooltip("lpp_cost", "Pipeline Replacement Cost", 
                                  get_config_value(config, PIPELINE_INPUTS["lpp_cost"]["config_path"]), 
@@ -57,7 +63,7 @@ app_ui = ui.page_sidebar(
                                  get_config_value(config, PIPELINE_INPUTS["hp_peak_kw"]["config_path"]), 
                                  PIPELINE_INPUTS["hp_peak_kw"]["tooltip"]),
       ),
-      ui.nav_panel("electric", ui.h2("Electric Utility Financials"),
+      ui.nav_panel("Electric", ui.h2("Electric Utility Financials"),
         # Generate all electric inputs with tooltips
         *[create_input_with_tooltip(input_id, 
                                    # Convert input_id to readable label
@@ -66,7 +72,7 @@ app_ui = ui.page_sidebar(
                                    input_data["tooltip"]) 
           for input_id, input_data in ELECTRIC_INPUTS.items()],
       ),
-      ui.nav_panel("gas", ui.h2("Gas"),
+      ui.nav_panel("Gas", ui.h2("Gas"),
         # Generate all gas inputs with tooltips
         *[create_input_with_tooltip(input_id, 
                                    input_id.replace('_', ' ').title().replace('Init', '').replace('Pct', '(%)').replace('Lpp', 'LPP'),
@@ -82,7 +88,8 @@ app_ui = ui.page_sidebar(
                                    input_data["tooltip"]) 
           for input_id, input_data in FINANCIAL_INPUTS.items()],
       ),
-      ui.nav_panel("growth", ui.h1("Growth"))
+        ui.nav_panel("Growth", ui.h1("Growth"))
+      ),
     ),
   ),
   ui.layout_columns(
@@ -119,6 +126,7 @@ app_ui = ui.page_sidebar(
     ),
     col_widths={"sm": (12, 12, 6, 6, 6, 6)},
   ),
+  ui.include_css(css_file),
 )
 
 def server(input, output, session):
@@ -149,6 +157,7 @@ def server(input, output, session):
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
+
     # REACTIVE DATA HANDLING
         # Reactive data preparation
     @reactive.calc
