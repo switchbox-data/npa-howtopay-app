@@ -26,7 +26,12 @@ def create_input_with_tooltip(input_id, label, value, tooltip):
         tooltip
     )
 
-app_ui = ui.page_sidebar(
+app_ui = app_ui = ui.page_fluid(
+  ui.div(
+    ui.h1("NPA How to Pay", class_="app-title"),
+    class_="app-header"
+  ),
+ui.page_sidebar(
   ui.sidebar(
     ui.card(
       ui.tooltip(
@@ -130,6 +135,8 @@ app_ui = ui.page_sidebar(
     col_widths={"sm": (12, 12, 6, 6, 6, 6)},
   ),
   ui.include_css(css_file),
+  # title="NPA How to Pay ",
+),
 )
 
 def server(input, output, session):
@@ -204,11 +211,13 @@ def server(input, output, session):
 
 
         # Create comprehensive DataFrame
+        # Create comprehensive DataFrame
         df = pl.DataFrame({
-            'year': pl.Series(years * 4, dtype=pl.Int32),
-            'utility': pl.Series(['Gas'] * len(years) * 2 + ['Electric'] * len(years) * 2, dtype=pl.Utf8),
-            'npa_status': pl.Series(['No NPA'] * len(years) + ['NPA'] * len(years) + ['No NPA'] * len(years) + ['NPA'] * len(years), dtype=pl.Utf8),
-            'delivery_charges': pl.Series([5] * len(years) * 2 + [8] * len(years) * 2, dtype=pl.Float64),
+            'year': pl.Series(years * 20, dtype=pl.Int32),
+            'utility': pl.Series(['Gas'] * len(years) * 10 + ['Electric'] * len(years) * 10, dtype=pl.Utf8),
+            'npa_status': pl.Series(['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years) + ['No NPA'] * len(years) + ['Converted'] * len(years), dtype=pl.Utf8),
+            'delivery_charges': pl.Series([5] * len(years) + [8] * len(years) + [3] * len(years) + [6] * len(years) + [1] * len(years) + [4] * len(years) + [7] * len(years) + [10] * len(years) + [2] * len(years) + [9] * len(years) + [11] * len(years) + [14] * len(years) + [12] * len(years) + [15] * len(years) + [13] * len(years) + [16] * len(years) + [0] * len(years) + [17] * len(years) + [18] * len(years) + [21] * len(years), dtype=pl.Float64),
+            'scenario': pl.Series(['Gas Opex'] * len(years) * 2 + ['Gas Capex'] * len(years) * 2 + ['Electric Opex'] * len(years) * 2 + ['Electric Capex'] * len(years) * 2 + ['Taxpayer'] * len(years) * 2 + ['Gas Opex'] * len(years) * 2 + ['Gas Capex'] * len(years) * 2 + ['Electric Opex'] * len(years) * 2 + ['Electric Capex'] * len(years) * 2 + ['Taxpayer'] * len(years) * 2, dtype=pl.Utf8),
         })
         
         return df

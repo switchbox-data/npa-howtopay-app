@@ -1,7 +1,17 @@
 import plotly.express as px
 import plotly.graph_objects as go
 
-def plot_ratebase(df):
+
+# Define Switchbox color palette
+switchbox_colors = {
+    'Gas Opex': '#68BED8',      # sb-sky
+    'Gas Capex': '#546800', # sb-pistachio-text
+    'Electric Opex': '#A0AF12', # sb-pistachio 
+    'Electric Capex': '#023047',     # sb-midnight  
+    'Taxpayer': '#FC9706', # sb-carrot
+}
+
+def plot_ratebase(df, my_colors=switchbox_colors):
     """Plot utility ratebase over time"""
     # Reshape to long format
     df_long = df.melt(
@@ -24,20 +34,23 @@ def plot_ratebase(df):
         }
     )
 
-    # Remove the "=" prefix from facet labels
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-
-    # Format y-axis to show currency - use update_yaxes() not update_yaxis()
-    fig.update_yaxes(tickformat='$,.0f')
+    # Remove the "=" prefix from facet labels and make them bold
+    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
+    fig.for_each_yaxis(lambda y: y.update(title=''))
     
     return fig
 
-def plot_grid(df):
+def plot_grid(df, my_colors=switchbox_colors):
     """Plot grid of ratebase and delivery charges over time"""
+    
+
+    
     fig = px.line(
         df, 
         x='year', 
-        y='delivery_charges', 
+        y='delivery_charges',
+        color='scenario',
+        color_discrete_map=my_colors,
         facet_col='utility',
         facet_row='npa_status',
         title='',
@@ -45,12 +58,24 @@ def plot_grid(df):
             'delivery_charges': '', 
             'year': 'Year',
             'utility': '',
-            'npa_status': ''
+            'npa_status': '',
+            'scenario': 'Scenario'
         }
     )
 
-    # Remove the "=" prefix from facet labels
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    # Position legend on bottom
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.2,
+            xanchor="center",
+            x=0.5
+        )
+    )
+
+    # Remove the "=" prefix from facet labels and make them bold
+    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
     fig.for_each_yaxis(lambda y: y.update(title=''))
     # Format y-axis to show currency - use update_yaxes() not update_yaxis()
     fig.update_yaxes(tickformat='$,.0f')
