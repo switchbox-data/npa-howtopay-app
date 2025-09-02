@@ -1,0 +1,15 @@
+[project]
+name = "py-shiny-uv"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.3.2",
+    "plotly>=6.3.0",
+    "polars>=1.32.3",
+    "pyyaml>=6.0.2",
+    "shiny>=1.4.0",
+    "shinywidgets>=0.7.0",
+    "sparqlwrapper>=2.0.0",
+]
