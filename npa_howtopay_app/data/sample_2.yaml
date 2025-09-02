@@ -34,7 +34,7 @@ shared:
   discount_rate: 0.075 # discount rate for converting future revenue requirements and bills into today's dollars
   npa_install_costs_init: 5500.0 # cost of installing one npa per household, in initial year of model
   npa_lifetime: 18.0 # average lifetime of an installed npa
-  start_year: 2025 # start year of model
+  start_year: 2035 # start year of model
   end_year: 2050 # end year of model
 
 npa:
