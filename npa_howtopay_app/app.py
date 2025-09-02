@@ -1,4 +1,5 @@
 import plotly.express as px
+import polars as pl
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui
 
@@ -8,6 +9,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
+from modules.plotting import plot_ratebase, plot_grid
 
 # Load configurations
 all_configs = load_all_configs()
@@ -86,7 +88,7 @@ app_ui = ui.page_sidebar(
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
-        # Shared inputs with tooltips
+        # Start and end year inputs
         *[create_input_with_tooltip(input_id, 
                                    input_id.replace('_', ' ').title(),
                                    get_config_value(config, input_data["config_path"]), 
@@ -115,13 +117,13 @@ app_ui = ui.page_sidebar(
       ui.card_header("Depreciation Accruals"),
       output_widget("depreciation_accruals_chart"),
     ),
-    col_widths={"sm": (12, 6, 6, 6, 6)},
+    col_widths={"sm": (12, 12, 6, 6, 6, 6)},
   ),
 )
 
 def server(input, output, session):
     """Server function for the Shiny app."""
-    
+    # REACTIVE INPUT HANDLING
     @reactive.calc
     def current_config():
         selected_run = input.run_name()
@@ -147,71 +149,88 @@ def server(input, output, session):
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
-    
-    @render_plotly
-    def changes_to_hh_delivery_charges_chart():
+    # REACTIVE DATA HANDLING
+        # Reactive data preparation
+    @reactive.calc
+    def prepare_data():
+        """Prepare the main DataFrame used across all charts"""
         start = input.start_year()
         end = input.end_year()
+        years = list(range(start, end))
 
-        ratebase = input.electric_ratebase_init()
-        ratebase_growth = input.baseline_non_npa_ratebase_growth()
-        ratebase_list = [ratebase]
+        # Electric utility
+        electric_ratebase = float(input.electric_ratebase_init())
+        electric_growth = float(input.baseline_non_npa_ratebase_growth())
+        electric_list = [electric_ratebase]
         for year in range(start, end-1):
-            ratebase = ratebase * (1 + ratebase_growth)
-            ratebase_list.append(ratebase)
-        return px.line(x=list(range(start, end)), y=ratebase_list, title="Ratebase")
+            electric_ratebase = electric_ratebase * (1 + electric_growth)
+            electric_list.append(electric_ratebase)
+
+        # Gas utility  
+        gas_ratebase = float(input.gas_ratebase_init())
+        gas_growth = float(input.baseline_non_lpp_ratebase_growth())
+        gas_list = [gas_ratebase]
+        for year in range(start, end-1):
+            gas_ratebase = gas_ratebase * (1 + gas_growth)
+            gas_list.append(gas_ratebase)
+
+        # Create comprehensive DataFrame
+        df = pl.DataFrame({
+            'Year': pl.Series(years, dtype=pl.Int32),
+            'Electric': pl.Series(electric_list, dtype=pl.Float64),
+            'Gas': pl.Series(gas_list, dtype=pl.Float64),
+        })
+        
+        return df
+    
+    @reactive.calc
+    def prepare_data_grid():
+        """Prepare the main DataFrame used across all charts"""
+        start = input.start_year()
+        end = input.end_year()
+        years = list(range(start, end))
+
+
+        # Create comprehensive DataFrame
+        df = pl.DataFrame({
+            'year': pl.Series(years * 4, dtype=pl.Int32),
+            'utility': pl.Series(['Gas'] * len(years) * 2 + ['Electric'] * len(years) * 2, dtype=pl.Utf8),
+            'npa_status': pl.Series(['No NPA'] * len(years) + ['NPA'] * len(years) + ['No NPA'] * len(years) + ['NPA'] * len(years), dtype=pl.Utf8),
+            'delivery_charges': pl.Series([5] * len(years) * 2 + [8] * len(years) * 2, dtype=pl.Float64),
+        })
+        
+        return df
+
+    @render_plotly
+    def changes_to_hh_delivery_charges_chart():
+        df = prepare_data_grid()
+        return plot_grid(df)
+
 
     @render_plotly
     def utility_revenue_reqs_chart():
-        start = 2025
-        end = 2050
 
-        ratebase = input.electric_ratebase_init()
-        ratebase_growth = input.baseline_non_npa_ratebase_growth()
-        ratebase_list = [ratebase]
-        for year in range(start, end-1):
-            ratebase = ratebase * (1 + ratebase_growth)
-            ratebase_list.append(ratebase)
-        return px.line(x=list(range(start, end)), y=ratebase_list, title="Ratebase")
+        df = prepare_data()
+        
+        return plot_ratebase(df)
 
     @render_plotly
     def volumetric_tariff_chart():
-        start = 2025
-        end = 2050
-
-        ratebase = input.electric_ratebase_init()
-        ratebase_growth = input.baseline_non_npa_ratebase_growth()
-        ratebase_list = [ratebase]
-        for year in range(start, end-1):
-            ratebase = ratebase * (1 + ratebase_growth)
-            ratebase_list.append(ratebase)
-        return px.line(x=list(range(start, end)), y=ratebase_list, title="Ratebase")
+        df = prepare_data()
+        
+        return plot_ratebase(df)
 
     @render_plotly
     def ratebase_chart():
-        start = 2025
-        end = 2050
-
-        ratebase = input.electric_ratebase_init()
-        ratebase_growth = input.baseline_non_npa_ratebase_growth()
-        ratebase_list = [ratebase]
-        for year in range(start, end-1):
-            ratebase = ratebase * (1 + ratebase_growth)
-            ratebase_list.append(ratebase)
-        return px.line(x=list(range(start, end)), y=ratebase_list, title="Ratebase")
+        df = prepare_data()
+        
+        return plot_ratebase(df)
 
     @render_plotly
     def depreciation_accruals_chart():
-        start = 2025
-        end = 2050
-
-        ratebase = input.electric_ratebase_init()
-        ratebase_growth = input.baseline_non_npa_ratebase_growth()
-        ratebase_list = [ratebase]
-        for year in range(start, end-1):
-            ratebase = ratebase * (1 + ratebase_growth)
-            ratebase_list.append(ratebase)
-        return px.line(x=list(range(start, end)), y=ratebase_list, title="Ratebase")
+        df = prepare_data()
+        
+        return plot_ratebase(df)
 
 
 app = App(app_ui, server)
