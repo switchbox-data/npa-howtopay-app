@@ -172,13 +172,13 @@ body {
 
 /* Navigation Tabs */
 .nav-tabs {
-  border-bottom: 2px solid var(--sb-sky);
+  border-bottom: 2px solid var(--sb-midnight-text);
 }
 
 .nav-tabs .nav-link {
   color: var(--sb-midnight-text);
-  border: none;
-  border-bottom: 3px solid transparent;
+  border: 1px solid var(--sb-midnight-text);
+  border-bottom: 1px solid var(--sb-midnight-text);
   padding: 12px 20px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -186,6 +186,7 @@ body {
 
 .nav-tabs .nav-link.active {
   color: var(--sb-carrot);
+  border: 1px solid var(--sb-carrot);
   border-bottom-color: var(--sb-carrot);
   background: transparent;
 }
