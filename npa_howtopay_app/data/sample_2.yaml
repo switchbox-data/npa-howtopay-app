@@ -40,3 +40,4 @@ shared:
 npa:
   lpp_cost: 50
   npa_projects_per_year: 100
+  num_converts_per_project: 5
