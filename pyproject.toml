@@ -9,6 +9,7 @@ dependencies = [
     "plotly>=6.3.0",
     "polars>=1.32.3",
     "pyyaml>=6.0.2",
+    "rsconnect-python>=1.27.1",
     "shiny>=1.4.0",
     "shinywidgets>=0.7.0",
     "sparqlwrapper>=2.0.0",
