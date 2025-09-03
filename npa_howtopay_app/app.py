@@ -19,11 +19,12 @@ all_configs = load_all_configs()
 run_name_choices = {name: name for name in all_configs.keys()}
 config = load_defaults()
 
-def create_input_with_tooltip(input_id, label, value, tooltip):
-    """Create numeric input with tooltip"""
+def create_input_with_tooltip(input_id):
+    """Create numeric input with tooltip using input mappings"""
+    input_data = ALL_INPUT_MAPPINGS[input_id]
     return ui.tooltip(
-        ui.input_numeric(input_id, label, value=value),
-        tooltip
+        ui.input_numeric(input_id, input_data["label"], value=get_config_value(config, input_data["config_path"])),
+        input_data["tooltip"]
     )
 
 app_ui = app_ui = ui.page_fluid(
@@ -44,57 +45,45 @@ ui.page_sidebar(
     ui.navset_tab(
       ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
-        create_input_with_tooltip("lpp_cost", "Pipeline Replacement Cost", 
-                                 get_config_value(config, PIPELINE_INPUTS["lpp_cost"]["config_path"]), 
-                                 PIPELINE_INPUTS["lpp_cost"]["tooltip"]),
-        create_input_with_tooltip("pipeline_depreciation_lifetime", "Pipeline Depreciation", 
-                                 get_config_value(config, PIPELINE_INPUTS["pipeline_depreciation_lifetime"]["config_path"]), 
-                                 PIPELINE_INPUTS["pipeline_depreciation_lifetime"]["tooltip"]),
-        create_input_with_tooltip("pipeline_maintenance_cost_pct", "Maintenance Cost (%)", 
-                                 get_config_value(config, PIPELINE_INPUTS["pipeline_maintenance_cost_pct"]["config_path"]), 
-                                 PIPELINE_INPUTS["pipeline_maintenance_cost_pct"]["tooltip"]),
+        create_input_with_tooltip("lpp_cost"),
+        create_input_with_tooltip("pipeline_depreciation_lifetime"),
+        create_input_with_tooltip("pipeline_maintenance_cost_pct"),
         ui.h4("NPA Program"),
         # NPA Program inputs
-        create_input_with_tooltip("npa_install_costs_init", "NPA Cost per Household", 
-                                 get_config_value(config, PIPELINE_INPUTS["npa_install_costs_init"]["config_path"]), 
-                                 PIPELINE_INPUTS["npa_install_costs_init"]["tooltip"]),
-        create_input_with_tooltip("npa_projects_per_year", "NPA Projects per Year", 
-                                 get_config_value(config, PIPELINE_INPUTS["npa_projects_per_year"]["config_path"]), 
-                                 PIPELINE_INPUTS["npa_projects_per_year"]["tooltip"]),
-        create_input_with_tooltip("npa_lifetime", "NPA Lifetime (years)", 
-                                 get_config_value(config, PIPELINE_INPUTS["npa_lifetime"]["config_path"]), 
-                                 PIPELINE_INPUTS["npa_lifetime"]["tooltip"]),
-        create_input_with_tooltip("hp_efficiency", "HP Efficiency", 
-                                 get_config_value(config, PIPELINE_INPUTS["hp_efficiency"]["config_path"]), 
-                                 PIPELINE_INPUTS["hp_efficiency"]["tooltip"]),
-        create_input_with_tooltip("hp_peak_kw", "HP Peak kW", 
-                                 get_config_value(config, PIPELINE_INPUTS["hp_peak_kw"]["config_path"]), 
-                                 PIPELINE_INPUTS["hp_peak_kw"]["tooltip"]),
+        create_input_with_tooltip("npa_install_costs_init"),
+        create_input_with_tooltip("npa_projects_per_year"),
+        create_input_with_tooltip("num_converts_per_project"),
+        create_input_with_tooltip("npa_lifetime"),
+        create_input_with_tooltip("hp_efficiency"),
+        create_input_with_tooltip("hp_peak_kw"),
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
-        # Generate all electric inputs with tooltips
-        *[create_input_with_tooltip(input_id, 
-                                   # Convert input_id to readable label
-                                   input_id.replace('_', ' ').title().replace('Init', '').replace('Pct', '(%)').replace('Kwh', 'kWh').replace('Kw', 'kW'),
-                                   get_config_value(config, input_data["config_path"]), 
-                                   input_data["tooltip"]) 
-          for input_id, input_data in ELECTRIC_INPUTS.items()],
+        create_input_with_tooltip("electric_num_users_init"),
+        create_input_with_tooltip("electric_ratebase_init"),
+        create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
+        create_input_with_tooltip("ror"),
+        create_input_with_tooltip("electric_default_depreciation_lifetime"),
+        create_input_with_tooltip("user_bill_fixed_cost_pct"),
+        create_input_with_tooltip("electric_maintenance_cost_pct"),
+        ui.h4("Electric Grid Parameters"),
+        create_input_with_tooltip("electricity_generation_cost_per_kwh_init"),
+        create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
+        create_input_with_tooltip("per_user_electric_need_kwh"),
+        create_input_with_tooltip("distribution_cost_per_peak_kw_increase_init"),
       ),
-      ui.nav_panel("Gas", ui.h4("Gas"),
-        # Generate all gas inputs with tooltips
-        *[create_input_with_tooltip(input_id, 
-                                   input_id.replace('_', ' ').title().replace('Init', '').replace('Pct', '(%)').replace('Lpp', 'LPP'),
-                                   get_config_value(config, input_data["config_path"]), 
-                                   input_data["tooltip"]) 
-          for input_id, input_data in GAS_INPUTS.items()],
+      ui.nav_panel("Gas", ui.h4("Gas Utility Financials"),
+        create_input_with_tooltip("gas_num_users_init"),
+        create_input_with_tooltip("gas_ratebase_init"),
+        create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
+        create_input_with_tooltip("gas_ror"),
+        create_input_with_tooltip("non_lpp_depreciation_lifetime"),
+        create_input_with_tooltip("gas_generation_cost_per_therm_init"),
+        create_input_with_tooltip("per_user_heating_need_therms"),
       ),
       ui.nav_panel("Financials", ui.h4("Inflation"),
-        # Generate financial inputs with tooltips
-        *[create_input_with_tooltip(input_id, 
-                                   input_id.replace('_', ' ').title().replace('Pct', '(%)'),
-                                   get_config_value(config, input_data["config_path"]), 
-                                   input_data["tooltip"]) 
-          for input_id, input_data in FINANCIAL_INPUTS.items()],
+        # Financial inputs - you can reorder these as needed
+        create_input_with_tooltip("cost_inflation_rate"),
+        create_input_with_tooltip("discount_rate"),
       ),
         ui.nav_panel("Growth", ui.h4("Growth"))
       ),
@@ -104,11 +93,8 @@ ui.page_sidebar(
     ui.card(
       ui.layout_columns(
         # Start and end year inputs
-        *[create_input_with_tooltip(input_id, 
-                                   input_id.replace('_', ' ').title(),
-                                   get_config_value(config, input_data["config_path"]), 
-                                   input_data["tooltip"]) 
-          for input_id, input_data in SHARED_INPUTS.items()],
+        create_input_with_tooltip("start_year"),
+        create_input_with_tooltip("end_year"),
         col_widths={"sm": (6, 6)}
       ),
     ),
