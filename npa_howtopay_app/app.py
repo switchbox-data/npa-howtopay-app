@@ -36,10 +36,11 @@ ui.page_sidebar(
   ui.sidebar(
     ui.card(
       ui.tooltip(
-        ui.input_selectize("run_name", ui.h4("Select Default Settings"), choices=run_name_choices, selected='sample'),
+        ui.input_selectize("run_name", ui.h6("Select Default Settings"), choices=run_name_choices, selected='sample'),
         "Select a scenario to fill default parameter values for the entire simulation. You can always modify the values later. Any changes you have made will be lost when you change scenarios."
       ),
       ui.output_text("selected_description"),
+      style="max-height: 20vh;"
     ),
     ui.card(
     ui.navset_tab(
@@ -87,8 +88,11 @@ ui.page_sidebar(
       ),
         ui.nav_panel("Growth", ui.h4("Growth"))
       ),
+    style="overflow-y: auto; max-height: 65vh;"  # Move scroll styling here
     ),
-  width="20%"),
+  width="20%",
+  # style="height: 95vh; overflow-y: auto; max-height: 100%;"
+  ),
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
