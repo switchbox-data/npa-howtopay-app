@@ -171,14 +171,27 @@ body {
 }
 
 /* Navigation Tabs */
-.nav-tabs {
-  border-bottom: 2px solid var(--sb-sky);
+/* .nav-tabs {
+  border-bottom: 2px solid var(--sb-midnight-text);
 }
 
 .nav-tabs .nav-link {
   color: var(--sb-midnight-text);
-  border: none;
-  border-bottom: 3px solid transparent;
+  border: 1px solid var(--sb-midnight-text);
+  border-bottom: 1px solid var(--sb-midnight-text);
+  padding: 12px 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+} */
+.nav-tabs {
+  border-bottom: 2px solid var(--sb-midnight-text);
+}
+
+.nav-tabs .nav-link {
+  color: var(--sb-white);
+  border: 1px solid var(--sb-white);
+  border-bottom: 1px solid var(--sb-white);
+  background: var(--sb-midnight);
   padding: 12px 20px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -186,13 +199,14 @@ body {
 
 .nav-tabs .nav-link.active {
   color: var(--sb-carrot);
+  border: 1px solid var(--sb-carrot);
   border-bottom-color: var(--sb-carrot);
-  background: transparent;
+  background: var(--sb-midnight);
 }
 
 .nav-tabs .nav-link:hover {
-  color: var(--sb-midnight);
-  border-bottom-color: var(--sb-midnight);
+  color: var(--sb-sky);
+  border-bottom-color: var(--sb-sky);
 }
 
 /* Charts Grid */
