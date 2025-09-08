@@ -27,7 +27,7 @@ def create_input_with_tooltip(input_id):
         input_data["tooltip"]
     )
 
-app_ui = app_ui = ui.page_fluid(
+app_ui = ui.page_fluid(
   ui.div(
     ui.h1("NPA How to Pay", class_="app-title"),
     class_="app-header"
