@@ -11,14 +11,14 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric, plot_grid
+from modules.plotting import plot_utility_metric, plot_grid, plot_total_bills
 
 
 css_file = Path(__file__).parent / "styles.css"
 # Load configurations
 all_configs = load_all_configs()
 run_name_choices = {name: name for name in all_configs.keys()}
-default_run_name = 'test'
+default_run_name = 'test_kiki'
 config = load_defaults(default_run_name)
 
 def create_input_with_tooltip(input_id):
@@ -38,7 +38,7 @@ ui.page_sidebar(
   ui.sidebar(
     ui.card(
       ui.tooltip(
-        ui.input_selectize("run_name", ui.h6("Select Default Settings"), choices=run_name_choices, selected='test'),
+        ui.input_selectize("run_name", ui.h6("Select Default Settings"), choices=run_name_choices, selected=default_run_name),
         "Select a scenario to fill default parameter values for the entire simulation. You can always modify the values later. Any changes you have made will be lost when you change scenarios."
       ),
       ui.output_text("selected_description"),
@@ -48,7 +48,7 @@ ui.page_sidebar(
     ui.navset_tab(
       ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
-        create_input_with_tooltip("lpp_cost"),
+        create_input_with_tooltip("pipe_value_per_user"),
         create_input_with_tooltip("pipeline_decomm_cost_per_user"),
         create_input_with_tooltip("pipeline_depreciation_lifetime"),
         create_input_with_tooltip("pipeline_maintenance_cost_pct"),
@@ -115,7 +115,15 @@ ui.page_sidebar(
     ),
     ui.card(
       ui.card_header("Changes to Average Household Delivery Charges"),
-      output_widget("changes_to_hh_delivery_charges_chart"),
+      # output_widget("changes_to_hh_delivery_charges_chart"),
+      ui.h6("Nonconverts"),
+      output_widget("nonconverts_bill_per_user_chart"),
+      ui.h6("Converts"),
+      output_widget("converts_bill_per_user_chart"),
+    ),
+    ui.card(
+      ui.card_header("Total Bills"),
+      output_widget("total_bills_chart"),
     ),
     ui.card(
       ui.card_header("Utility Revenue Requirements"),
@@ -133,7 +141,7 @@ ui.page_sidebar(
       ui.card_header("Depreciation Accruals"),
       output_widget("depreciation_accruals_chart"),
     ),
-    col_widths={"sm": (12, 12, 6, 6, 6, 6)},
+    col_widths={"sm": (12, 12,12, 6, 6, 6, 6)},
   ),
   ui.include_css(css_file),
   # title="NPA How to Pay ",
@@ -175,7 +183,7 @@ def server(input, output, session):
         web_params = {
             "npa_num_projects": input.npa_projects_per_year(),
             "num_converts": input.num_converts_per_project(),
-            "pipe_value_per_user": input.lpp_cost(),
+            "pipe_value_per_user": input.pipe_value_per_user(),
             "pipe_decomm_cost_per_user": input.pipeline_decomm_cost_per_user(),
             "peak_kw_winter_headroom": input.peak_kw_winter_headroom(),
             "peak_kw_summer_headroom": input.peak_kw_summer_headroom(),
@@ -266,9 +274,13 @@ def server(input, output, session):
         input_params = create_input_params()
         ts_params = create_ts_inputs()
         _, delta_bau_df = nhp.model.analyze_scenarios(scenario_runs, input_params, ts_params)
-        plt_df = nhp.utils.transform_to_long_format(delta_bau_df)
+        
+        return delta_bau_df
+    @reactive.calc
+    def prep_df_to_plot():
+        df = run_model()
+        plt_df = nhp.utils.transform_to_long_format(df)
         return plt_df
-
     # REACTIVE DATA HANDLING
         # Reactive data preparation
     @reactive.calc
@@ -331,7 +343,7 @@ def server(input, output, session):
 
     @render_plotly
     def utility_revenue_reqs_chart():
-        df = run_model()
+        df = prep_df_to_plot()
         
         return plot_utility_metric(
             plt_df=df,
@@ -342,7 +354,7 @@ def server(input, output, session):
 
     @render_plotly
     def volumetric_tariff_chart():
-        df = run_model()
+        df = prep_df_to_plot()
         
         return plot_utility_metric(
             plt_df=df,
@@ -355,7 +367,7 @@ def server(input, output, session):
     def ratebase_chart():
         try:
             print("ratebase_chart called")
-            df = run_model()
+            df = prep_df_to_plot()
             print(f"Got df with shape: {df.shape if hasattr(df, 'shape') else 'no shape'}")
             print(f"Columns: {df.columns if hasattr(df, 'columns') else 'no columns'}")
             
@@ -376,7 +388,7 @@ def server(input, output, session):
 
     @render_plotly
     def depreciation_accruals_chart():
-        df = run_model()
+        df = prep_df_to_plot()
         
         return plot_utility_metric(
             plt_df=df,
@@ -385,5 +397,33 @@ def server(input, output, session):
             y_label_unit="$"
         )
 
+    @render_plotly
+    def nonconverts_bill_per_user_chart():
+        df = prep_df_to_plot()
+        
+        return plot_utility_metric(
+            plt_df=df,
+            column="nonconverts_bill_per_user",
+            title="",
+            y_label_unit="$"
+        )
+    @render_plotly
+    def converts_bill_per_user_chart():
+        df = prep_df_to_plot()
+        
+        return plot_utility_metric(
+            plt_df=df,
+            column="converts_bill_per_user",
+            title="",
+            y_label_unit="$"
+        )
+    
+    @render_plotly
+    def total_bills_chart():
+        df = run_model()
+        
+        return plot_total_bills(
+            delta_bau_df=df
+        )
 
 app = App(app_ui, server)
