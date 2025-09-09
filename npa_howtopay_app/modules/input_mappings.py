@@ -1,9 +1,9 @@
 """Input mappings organized by UI sections with tooltips."""
 PIPELINE_INPUTS = {
     # Pipeline Economics section
-    "lpp_cost": {
+    "pipe_value_per_user": {
         "label": "Pipeline replacement cost",
-        "config_path": ["npa", "lpp_cost"],
+        "config_path": ["npa", "pipe_value_per_user"],
         "tooltip": "Pipeline replacement cost per NPA household"
     },
     "pipeline_decomm_cost_per_user": {
@@ -54,12 +54,12 @@ PIPELINE_INPUTS = {
     },
     "peak_kw_summer_headroom": {
         "label": "Summer peak headroom (kW)",
-        "config_path": ["electric", "hp_peak_kw"],
+        "config_path": ["npa", "peak_kw_summer_headroom"],
         "tooltip": "Maximum electrical demand of heat pump during peak operation"
     },
     "peak_kw_winter_headroom": {
         "label": "Winter peak headroom (kW)",
-        "config_path": ["electric", "hp_peak_kw"],
+        "config_path": ["npa", "peak_kw_winter_headroom"],
         "tooltip": "Maximum electrical demand of heat pump during peak operation"
     }
 }
