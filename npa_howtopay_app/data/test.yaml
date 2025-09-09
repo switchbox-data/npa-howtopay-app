@@ -1,0 +1,37 @@
+run_name: sample
+description: "Testing using real package"
+
+gas:
+  baseline_non_lpp_ratebase_growth: 0.015 # capex expenditures as percent of existing ratebase (including pipes, not including npas)
+  default_depreciation_lifetime: 28  # depreciation lifetime for all projects, used for synthetic initial capex projects
+  pipeline_depreciation_lifetime: 60  # depreciation lifetime for pipeline replacement
+  non_lpp_depreciation_lifetime: 28  # depreciation lifetime for non-lpp gas capex
+  gas_generation_cost_per_therm_init: 0.055  # cost per therm of natural gas, in initial year of model
+  num_users_init: 4.5e6  # initial number of gas users
+  per_user_heating_need_therms: 400.0  # household annual heating need in therms
+  pipeline_maintenance_cost_pct: 0.022  # yearly opex as a perecent of existing ratebase value (not including npas)
+  ratebase_init: 30.0e9 # intitial ratebase
+  ror: 0.08  # gas utility return on capital
+
+electric:
+  aircon_peak_kw: 2.8 # peak energy consumption of a household airconditioning unit
+  baseline_non_npa_ratebase_growth: 0.02 # capex expenditures as percent of existing ratebase (excluding npas)
+  default_depreciation_lifetime: 22 # depreciation lifetime for all projects, used for synthetic initial capex projects and new non-npa projects
+  grid_upgrade_depreciation_lifetime: 18 # depreciation lifetime for grid upgrades
+  distribution_cost_per_peak_kw_increase_init: 550.0 # cost to increase grid capacity to support one additional kw of peak demand, in initial year of model
+  electric_maintenance_cost_pct: 0.014 # yearly opex as a perecent of existing ratebase value (not including npas)
+  electricity_generation_cost_per_kwh_init: 0.11 # cost per kwh of electricity generation (just the generation cost), in initial year of model
+  hp_efficiency: 3 # hp heating efficiency
+  hp_peak_kw: 4.5 # peak energy consumption of a household heat pump unit
+  num_users_init: 5.5e6 # initial number of electric users
+  per_user_electric_need_kwh: 7.0e3 # per user annual electricity need in kwh
+  ratebase_init: 25.0e9 # intitial ratebase
+  user_bill_fixed_cost_pct: 0.05 # percent of revenue requirement that is split evently among households as a fixed cost
+  ror: 0.09 # electric utility return on capital
+
+shared:
+  cost_inflation_rate: 0.035 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
+  discount_rate: 0.029 # discount rate for converting future revenue requirements and bills into today's dollars
+  npa_install_costs_init: 15.0e3 # cost of installing one npa per household, in initial year of model
+  npa_lifetime: 15.0 # average lifetime of an installed npa
+  start_year: 2025 # start year of model
