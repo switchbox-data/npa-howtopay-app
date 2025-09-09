@@ -1,4 +1,4 @@
-run_name: sample
+run_name: test
 description: "Testing using real package"
 
 gas:
@@ -12,6 +12,8 @@ gas:
   pipeline_maintenance_cost_pct: 0.022  # yearly opex as a perecent of existing ratebase value (not including npas)
   ratebase_init: 30.0e9 # intitial ratebase
   ror: 0.08  # gas utility return on capital
+  gas_fixed_overhead_costs: 500.0e6  # fixed annual overhead costs for gas utility
+  gas_bau_lpp_costs_per_year: 1.0e9  # gas pipeline replacement costs per year without any NPA projects (BAU)
 
 electric:
   aircon_peak_kw: 2.8 # peak energy consumption of a household airconditioning unit
@@ -28,6 +30,8 @@ electric:
   ratebase_init: 25.0e9 # intitial ratebase
   user_bill_fixed_cost_pct: 0.05 # percent of revenue requirement that is split evently among households as a fixed cost
   ror: 0.09 # electric utility return on capital
+  aircon_percent_adoption_pre_npa: 0.65  # percentage of households that already have air conditioning before NPA
+  electric_fixed_overhead_costs: 400.0e6  # fixed annual overhead costs for electric utility
 
 shared:
   cost_inflation_rate: 0.035 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
@@ -35,3 +39,10 @@ shared:
   npa_install_costs_init: 15.0e3 # cost of installing one npa per household, in initial year of model
   npa_lifetime: 15.0 # average lifetime of an installed npa
   start_year: 2025 # start year of model
+  end_year: 2050  # last year of the analysis period
+
+npa:
+  lpp_cost: 30000
+  pipeline_decomm_cost_per_user: 10000
+  npa_projects_per_year: 100
+  num_converts_per_project: 10

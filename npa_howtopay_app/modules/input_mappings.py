@@ -6,6 +6,11 @@ PIPELINE_INPUTS = {
         "config_path": ["npa", "lpp_cost"],
         "tooltip": "Pipeline replacement cost per NPA household"
     },
+    "pipeline_decomm_cost_per_user": {
+        "label": "Pipeline decommissioning cost per household",
+        "config_path": ["npa", "pipeline_decomm_cost_per_user"],
+        "tooltip": "Pipeline decommissioning cost per NPA household"
+    },
     "pipeline_depreciation_lifetime": {
         "label": "Pipeline depreciation",
         "config_path": ["gas", "pipeline_depreciation_lifetime"],
@@ -42,8 +47,18 @@ PIPELINE_INPUTS = {
         "config_path": ["electric", "hp_efficiency"],
         "tooltip": "Heat pump coefficient of performance (COP) - units of heat per unit of electricity"
     },
-    "hp_peak_kw": {
-        "label": "HP peak kW",
+    "aircon_percent_adoption_pre_npa": {
+        "label": "Aircon percent adoption pre-NPA",
+        "config_path": ["electric", "aircon_percent_adoption_pre_npa"],
+        "tooltip": "Percentage of households that already have air conditioning before NPA"
+    },
+    "peak_kw_summer_headroom": {
+        "label": "Summer peak headroom (kW)",
+        "config_path": ["electric", "hp_peak_kw"],
+        "tooltip": "Maximum electrical demand of heat pump during peak operation"
+    },
+    "peak_kw_winter_headroom": {
+        "label": "Winter peak headroom (kW)",
         "config_path": ["electric", "hp_peak_kw"],
         "tooltip": "Maximum electrical demand of heat pump during peak operation"
     }
@@ -80,10 +95,15 @@ ELECTRIC_INPUTS = {
         "config_path": ["electric", "ratebase_init"],
         "tooltip": "Initial value of electric utility's ratebase (total assets)"
     },
-    "ror": {
+    "electric_ror": {
         "label": "Rate on return (%)",
         "config_path": ["electric", "ror"],
         "tooltip": "Return on capital rate for electric utility investments"
+    },
+    "electric_fixed_overhead_costs": {
+        "label": "Electric fixed overhead costs",
+        "config_path": ["electric", "electric_fixed_overhead_costs"],
+        "tooltip": "Fixed annual overhead costs for electric utility"
     },
     "user_bill_fixed_cost_pct": {
         "label": "User bill fixed cost (%)",
@@ -99,6 +119,16 @@ ELECTRIC_INPUTS = {
         "label": "Per user electric need (kWh)",
         "config_path": ["electric", "per_user_electric_need_kwh"],
         "tooltip": "Average annual electricity consumption per customer in kilowatt-hours"
+    },
+    "aircon_peak_kw": {
+        "label": "Aircon peak kW",
+        "config_path": ["electric", "aircon_peak_kw"],
+        "tooltip": "Peak energy consumption of a household airconditioning unit"
+    },
+    "hp_peak_kw": {        
+        "label": "HP peak kW",
+        "config_path": ["electric", "hp_peak_kw"],
+        "tooltip": "Maximum electrical demand of heat pump during peak operation"
     },
     "distribution_cost_per_peak_kw_increase_init": {
         "label": "Distribution cost per peak kW increase",
@@ -122,6 +152,16 @@ GAS_INPUTS = {
         "label": "Rate on return (%)",
         "config_path": ["gas", "ror"],
         "tooltip": "Return on capital rate for gas utility investments"
+    },
+    "gas_fixed_overhead_costs": {
+        "label": "Gas fixed overhead costs",
+        "config_path": ["gas", "gas_fixed_overhead_costs"],
+        "tooltip": "Fixed annual overhead costs for gas utility"
+    },
+    "gas_bau_lpp_costs_per_year": {
+        "label": "Gas BAU pipeline replacement costs per year",
+        "config_path": ["gas", "gas_bau_lpp_costs_per_year"],
+        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU)"
     },
     "baseline_non_lpp_ratebase_growth": {
         "label": "Baseline non-LPP ratebase growth",
