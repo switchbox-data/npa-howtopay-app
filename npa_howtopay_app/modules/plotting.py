@@ -49,9 +49,50 @@ def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float
         return ('$,.1f', 'M', 1_000_000)
     elif max_abs_value >= 1_000:  # Thousands
         return ('$,.0f', 'K', 1_000)
-    else:  # Less than thousands
+    elif max_abs_value >= 10:  # Between $10 and $999
         return ('$,.0f', '', 1)
-        
+    else:  # Less than $10
+        return ('$.2f', '', 1)  # Changed from '$,.2f' to '$.2f'
+
+def apply_plot_theme(fig):
+    """
+    Apply consistent theme with white background and gray grid lines
+    
+    Args:
+        fig: Plotly figure object
+    
+    Returns:
+        Modified figure with applied theme
+    """
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(color='black')
+    )
+    
+    fig.update_xaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray',
+        showline=True,
+        linewidth=1,
+        linecolor='lightgray'
+    )
+    
+    fig.update_yaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray',
+        showline=True,
+        linewidth=1,
+        linecolor='lightgray',
+        zeroline=True,
+        zerolinewidth=1,
+        zerolinecolor='darkgray'
+    )
+    
+    return fig
+
 def plot_utility_metric(
     plt_df: pl.DataFrame, 
     column: str, 
@@ -151,6 +192,9 @@ def plot_utility_metric(
     elif "/" in y_label_unit:  # For rates like $/kWh
         fig.update_yaxes(tickformat='.2f')
     
+    # Apply theme
+    fig = apply_plot_theme(fig)
+    
     return fig
 
 def plot_grid(df, my_colors=switchbox_colors):
@@ -202,4 +246,114 @@ def plot_grid(df, my_colors=switchbox_colors):
     xref="paper",
     yref="paper"
     )
+    
+    # Apply theme
+    fig = apply_plot_theme(fig)
+    
+    return fig
+
+def plot_total_bills(
+    delta_bau_df: pl.DataFrame, 
+    scenario_colors: Dict[str, str] = switchbox_colors,
+    scenario_line_styles: Dict[str, str] = line_styles,
+    show_absolute: bool = False
+) -> go.Figure:
+    """
+    Plot total bills faceted by converts/nonconverts using Plotly
+    
+    Args:
+        delta_bau_df: DataFrame with bill data
+        scenario_colors: Dictionary mapping scenario_id to colors
+        scenario_line_styles: Dictionary mapping scenario_id to line styles
+        show_absolute: Whether to show absolute values or deltas (default: False for delta)
+    """
+    
+    # Reshape data for plotly - create long format with user_type facet
+    converts_data = delta_bau_df.select([
+        "year", "scenario_id", "converts_total_bill_per_user"
+    ]).with_columns(
+        pl.lit("CONVERTS").alias("user_type"),
+        pl.col("converts_total_bill_per_user").alias("total_bill")
+    ).drop("converts_total_bill_per_user")
+    
+    nonconverts_data = delta_bau_df.select([
+        "year", "scenario_id", "nonconverts_total_bill_per_user"
+    ]).with_columns(
+        pl.lit("NONCONVERTS").alias("user_type"),
+        pl.col("nonconverts_total_bill_per_user").alias("total_bill")
+    ).drop("nonconverts_total_bill_per_user")
+    
+    # Combine data
+    plt_df = pl.concat([converts_data, nonconverts_data])
+    
+    # Detect magnitude and get appropriate formatting for y-axis
+    tick_format, suffix, scale_factor = detect_magnitude_and_format(plt_df["total_bill"])
+    
+    # Scale the data for display
+    plt_df = plt_df.with_columns(
+        (pl.col("total_bill") / scale_factor).alias("total_bill_scaled")
+    )
+    
+    # Update y-axis label with suffix
+    y_label_with_suffix = f"${suffix}" if suffix else "$"
+    y_label = f"Absolute Value ({y_label_with_suffix})" if show_absolute else f"Delta from BAU ({y_label_with_suffix})"
+    
+    print("Creating plotly figure...")
+    # Create figure with facets
+    fig = px.line(
+        plt_df,
+        x="year",
+        y="total_bill_scaled",
+        color="scenario_id",
+        line_dash="scenario_id",
+        facet_col="user_type",
+        color_discrete_map=scenario_colors,
+        line_dash_map=scenario_line_styles,
+        title="",
+        labels={
+            "total_bill_scaled": y_label,
+            "year": "Year",
+            "user_type": "",
+            "scenario_id": "Scenario"
+        }
+    )
+    print("Figure created successfully")
+    
+    # Remove the "=" prefix from facet labels and make them bold, capitalize
+    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
+    
+    # Remove y-axis titles from individual facets
+    fig.for_each_yaxis(lambda y: y.update(title=''))
+    
+    # Add main y-axis label
+    fig.add_annotation(
+        x=-0.1,
+        y=0.5,
+        text="User Bills (Total)",
+        textangle=-90,
+        showarrow=False,
+        xref="paper",
+        yref="paper"
+    )
+    
+    # Update legend labels to use scenario_labels
+    fig.for_each_trace(lambda t: t.update(name=scenario_labels.get(t.name, t.name)))
+    
+    # Update layout to match plot_utility_metric style
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.4,
+            xanchor="center",
+            x=0.5
+        )
+    )
+    
+    # Format y-axis with detected tick format
+    fig.update_yaxes(tickformat=tick_format)
+    
+    # Apply theme
+    fig = apply_plot_theme(fig)
+    
     return fig
