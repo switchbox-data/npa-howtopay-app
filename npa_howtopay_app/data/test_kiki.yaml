@@ -1,5 +1,5 @@
-run_name: test_he
-description: "More NPA projects"
+run_name: test_kiki
+description: "Testing using values from Kiki"
 
 gas:
   baseline_non_lpp_ratebase_growth: 0.066 # capex expenditures as percent of existing ratebase (including pipes, not including npas)
@@ -44,7 +44,7 @@ shared:
 npa:
   pipe_value_per_user: 30.0e3
   pipeline_decomm_cost_per_user: 0
-  npa_projects_per_year: 50
-  num_converts_per_project: 10
+  npa_projects_per_year: 2
+  num_converts_per_project: 5
   peak_kw_summer_headroom: 1500
   peak_kw_winter_headroom: 2000
