@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-npa-howtopay = { git = "https://github.com/switchbox-data/npa-howtopay.git", rev = "eda-plotting" }
+npa-howtopay = { git = "https://github.com/switchbox-data/npa-howtopay.git", rev = "main" }

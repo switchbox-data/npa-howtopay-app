@@ -500,7 +500,7 @@ wheels = [
 [[package]]
 name = "npa-howtopay"
 version = "0.0.1"
-source = { git = "https://github.com/switchbox-data/npa-howtopay.git?rev=eda-plotting#3526566dd7001ae781d7239dd32a4c7d4f20616c" }
+source = { git = "https://github.com/switchbox-data/npa-howtopay.git?rev=main#89027619ae838a705bbb3498a19de7bd305fe660" }
 dependencies = [
     { name = "attrs" },
     { name = "matplotlib" },
@@ -787,7 +787,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "npa-howtopay", git = "https://github.com/switchbox-data/npa-howtopay.git?rev=eda-plotting" },
+    { name = "npa-howtopay", git = "https://github.com/switchbox-data/npa-howtopay.git?rev=main" },
     { name = "numpy", specifier = ">=2.3.2" },
     { name = "plotly", specifier = ">=6.3.0" },
     { name = "polars", specifier = ">=1.32.3" },
