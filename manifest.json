@@ -6,7 +6,7 @@
     "entrypoint": "npa_howtopay_app.app:app"
   },
   "python": {
-    "version": "3.11.12",
+    "version": "3.13.7",
     "package_manager": {
       "name": "pip",
       "version": "25.2",
@@ -15,48 +15,60 @@
   },
   "environment": {
     "python": {
-      "requires": "~=3.11.0"
+      "requires": "~=3.13.0"
     }
   },
   "files": {
     "requirements.txt": {
-      "checksum": "4a67c0294c38d3cd641f04bbf76068d7"
+      "checksum": "f3f671f800c59f6011a9c5e74c3134bd"
     },
     ".DS_Store": {
-      "checksum": "194577a7e20bdcc7afbb718f502c134c"
+      "checksum": "9c9a10f7a474ce8fbb03e6c5e608366d"
     },
     ".gitignore": {
       "checksum": "6bb62fef7b423463ca6646a552579d0d"
     },
     ".python-version": {
-      "checksum": "4ea6e4c4524a63c43880fbc3e36e549e"
+      "checksum": "731410e21d3870d944e7d36e965fc3fa"
     },
     "LICENSE": {
       "checksum": "86d3f3a95c324c9479bd8986968f4327"
     },
     "README.md": {
-      "checksum": "545ac353fd7c1ce3e3718a0c9a7e662a"
+      "checksum": "2cdf2a6d1b6245fdbff259c86134ed14"
     },
     "justfile": {
       "checksum": "f98eac09db07c4a85abd5a427a7064f8"
     },
+    "npa_howtopay_app/.DS_Store": {
+      "checksum": "e3a0aac93d846b476f1d01d5f604cdb7"
+    },
     "npa_howtopay_app/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
+    "npa_howtopay_app/__pycache__/__init__.cpython-311.pyc": {
+      "checksum": "33e5ea190c4e4c20fbfbb4e1f7b222af"
+    },
+    "npa_howtopay_app/__pycache__/__init__.cpython-313.pyc": {
+      "checksum": "ece006f5fed30a7b46251a758386edb6"
+    },
     "npa_howtopay_app/__pycache__/app.cpython-311.pyc": {
-      "checksum": "85bba1e5eaec4c6aaca606517993ce23"
+      "checksum": "0a6bf9c83f108b98c05c0326576ad6f8"
+    },
+    "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
+      "checksum": "5b464e4fe6f14e7597eca130572b4404"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "4081fdeb112380909d1c6b9634299089"
+      "checksum": "d78b1f8d350b0515e3df4fd4d425230a"
     },
     "npa_howtopay_app/data/.DS_Store": {
       "checksum": "194577a7e20bdcc7afbb718f502c134c"
     },
-    "npa_howtopay_app/data/sample.yaml": {
-      "checksum": "abbab9a5ba508f52bc0dd1c05f82885b"
+    "npa_howtopay_app/data/test.yaml": {
+      "checksum": "9c1259b51106406ca6ff57208af3d055"
     },
-    "npa_howtopay_app/data/sample_2.yaml": {
-      "checksum": "ce4f385ef2b19ba5f81b0e05dd4dd952"
+    "npa_howtopay_app/data/test_kiki.yaml": {
+      "checksum": "9ca27e05df50fdb6952362f26994e3ea"
     },
     "npa_howtopay_app/modules/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
@@ -64,23 +76,35 @@
     "npa_howtopay_app/modules/__pycache__/__init__.cpython-311.pyc": {
       "checksum": "5edbad4e172a1581c4019f77cde39230"
     },
+    "npa_howtopay_app/modules/__pycache__/__init__.cpython-313.pyc": {
+      "checksum": "64cf68fea8350bef100f9f8f4d73c304"
+    },
     "npa_howtopay_app/modules/__pycache__/config.cpython-311.pyc": {
-      "checksum": "a7e3b2c40424cef14a3a872437503737"
+      "checksum": "b57eb3316f96d6467b507fac0b217a9a"
+    },
+    "npa_howtopay_app/modules/__pycache__/config.cpython-313.pyc": {
+      "checksum": "6d6af5c150497ae383c0845c627362ba"
     },
     "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-311.pyc": {
-      "checksum": "53123ad99ed695476f30db8807a4d2d1"
+      "checksum": "b76caa03c98e8466661c642affee0f11"
+    },
+    "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-313.pyc": {
+      "checksum": "3da72bbfd5ebf31ca0f6828dd1520261"
     },
     "npa_howtopay_app/modules/__pycache__/plotting.cpython-311.pyc": {
-      "checksum": "825d2719f346d66fe166d90511a9356f"
+      "checksum": "42926a5b9604f2020dc6405d9558ddf1"
+    },
+    "npa_howtopay_app/modules/__pycache__/plotting.cpython-313.pyc": {
+      "checksum": "512815d511593f4f1ea923f6e3451447"
     },
     "npa_howtopay_app/modules/config.py": {
-      "checksum": "2893b063183f67f5a13ffd3d8282aebb"
+      "checksum": "4df016fb54ae3864ef44d3e093c23ab4"
     },
     "npa_howtopay_app/modules/input_mappings.py": {
-      "checksum": "732f2b91559609deab6eeb64498662f5"
+      "checksum": "9f49bf0917771b132873bd4f938457f2"
     },
     "npa_howtopay_app/modules/plotting.py": {
-      "checksum": "9dbd96d7a8cd7d441ca7e27c9fe64817"
+      "checksum": "abbd6537c50311411ceb514835ca5827"
     },
     "npa_howtopay_app/rsconnect-python/npa_howtopay_app.json": {
       "checksum": "ef0bf409a060e5b2cdfc4d09ec11cfff"
@@ -89,10 +113,10 @@
       "checksum": "cfa5126bf0ccb7c41fb8db1c365b00d0"
     },
     "pyproject.toml": {
-      "checksum": "c4cc3d998b5602f8ffe7401909f77786"
+      "checksum": "01b4e0d3428eb5fe1cc2330bdcb421d0"
     },
     "uv.lock": {
-      "checksum": "9c1a7da0831e6cc191fd76ee6b9c27f6"
+      "checksum": "e6710e071d2daa6e9efc246de452708a"
     }
   }
 }
