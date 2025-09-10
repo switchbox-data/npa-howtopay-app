@@ -3,8 +3,9 @@ name = "py-shiny-uv"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
+    "npa-howtopay",
     "numpy>=2.3.2",
     "plotly>=6.3.0",
     "polars>=1.32.3",
@@ -14,3 +15,6 @@ dependencies = [
     "shinywidgets>=0.7.0",
     "sparqlwrapper>=2.0.0",
 ]
+
+[tool.uv.sources]
+npa-howtopay = { git = "https://github.com/switchbox-data/npa-howtopay.git", rev = "main" }

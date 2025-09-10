@@ -1,6 +1,7 @@
 import yaml
 from pathlib import Path
 
+
 def load_all_configs():
     """Load all YAML configuration files and return a dictionary."""
     configs = {}
@@ -15,9 +16,9 @@ def load_all_configs():
             }
     return configs
 
-def load_defaults():
+def load_defaults(default_run_name):
     """Load default values from YAML configuration file."""
-    config_path = Path(__file__).parent.parent / "data" / "sample.yaml"
+    config_path = Path(__file__).parent.parent / "data" / f"{default_run_name}.yaml"
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 

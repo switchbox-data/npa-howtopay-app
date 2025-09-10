@@ -3,21 +3,23 @@ import polars as pl
 from pathlib import Path
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui
-
+import npa_howtopay as nhp
+import plotly.graph_objects as go
 # Import from modules
 from modules.config import load_all_configs, load_defaults, get_config_value
 from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_ratebase, plot_grid
+from modules.plotting import plot_utility_metric, plot_grid, plot_total_bills
 
 
 css_file = Path(__file__).parent / "styles.css"
 # Load configurations
 all_configs = load_all_configs()
 run_name_choices = {name: name for name in all_configs.keys()}
-config = load_defaults()
+default_run_name = 'test_kiki'
+config = load_defaults(default_run_name)
 
 def create_input_with_tooltip(input_id):
     """Create numeric input with tooltip using input mappings"""
@@ -36,7 +38,7 @@ ui.page_sidebar(
   ui.sidebar(
     ui.card(
       ui.tooltip(
-        ui.input_selectize("run_name", ui.h6("Select Default Settings"), choices=run_name_choices, selected='sample'),
+        ui.input_selectize("run_name", ui.h6("Select Default Settings"), choices=run_name_choices, selected=default_run_name),
         "Select a scenario to fill default parameter values for the entire simulation. You can always modify the values later. Any changes you have made will be lost when you change scenarios."
       ),
       ui.output_text("selected_description"),
@@ -46,7 +48,8 @@ ui.page_sidebar(
     ui.navset_tab(
       ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
-        create_input_with_tooltip("lpp_cost"),
+        create_input_with_tooltip("pipe_value_per_user"),
+        create_input_with_tooltip("pipeline_decomm_cost_per_user"),
         create_input_with_tooltip("pipeline_depreciation_lifetime"),
         create_input_with_tooltip("pipeline_maintenance_cost_pct"),
         ui.h4("NPA Program"),
@@ -56,20 +59,26 @@ ui.page_sidebar(
         create_input_with_tooltip("num_converts_per_project"),
         create_input_with_tooltip("npa_lifetime"),
         create_input_with_tooltip("hp_efficiency"),
+        create_input_with_tooltip("peak_kw_summer_headroom"),
+        create_input_with_tooltip("peak_kw_winter_headroom"),
         create_input_with_tooltip("hp_peak_kw"),
+        create_input_with_tooltip("aircon_peak_kw"),
+        create_input_with_tooltip("aircon_percent_adoption_pre_npa"),
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
         create_input_with_tooltip("electric_ratebase_init"),
         create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
-        create_input_with_tooltip("ror"),
+        create_input_with_tooltip("electric_ror"),
         create_input_with_tooltip("electric_default_depreciation_lifetime"),
+        create_input_with_tooltip("electric_fixed_overhead_costs"),
         create_input_with_tooltip("user_bill_fixed_cost_pct"),
         create_input_with_tooltip("electric_maintenance_cost_pct"),
         ui.h4("Electric Grid Parameters"),
         create_input_with_tooltip("electricity_generation_cost_per_kwh_init"),
         create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
         create_input_with_tooltip("per_user_electric_need_kwh"),
+
         create_input_with_tooltip("distribution_cost_per_peak_kw_increase_init"),
       ),
       ui.nav_panel("Gas", ui.h4("Gas Utility Financials"),
@@ -77,6 +86,8 @@ ui.page_sidebar(
         create_input_with_tooltip("gas_ratebase_init"),
         create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
         create_input_with_tooltip("gas_ror"),
+        create_input_with_tooltip("gas_fixed_overhead_costs"),
+        create_input_with_tooltip("gas_bau_lpp_costs_per_year"),
         create_input_with_tooltip("non_lpp_depreciation_lifetime"),
         create_input_with_tooltip("gas_generation_cost_per_therm_init"),
         create_input_with_tooltip("per_user_heating_need_therms"),
@@ -104,7 +115,15 @@ ui.page_sidebar(
     ),
     ui.card(
       ui.card_header("Changes to Average Household Delivery Charges"),
-      output_widget("changes_to_hh_delivery_charges_chart"),
+      # output_widget("changes_to_hh_delivery_charges_chart"),
+      ui.h6("Nonconverts"),
+      output_widget("nonconverts_bill_per_user_chart"),
+      ui.h6("Converts"),
+      output_widget("converts_bill_per_user_chart"),
+    ),
+    ui.card(
+      ui.card_header("Total Bills"),
+      output_widget("total_bills_chart"),
     ),
     ui.card(
       ui.card_header("Utility Revenue Requirements"),
@@ -122,7 +141,7 @@ ui.page_sidebar(
       ui.card_header("Depreciation Accruals"),
       output_widget("depreciation_accruals_chart"),
     ),
-    col_widths={"sm": (12, 12, 6, 6, 6, 6)},
+    col_widths={"sm": (12, 12,12, 6, 6, 6, 6)},
   ),
   ui.include_css(css_file),
   # title="NPA How to Pay ",
@@ -157,7 +176,111 @@ def server(input, output, session):
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
+    
+    @reactive.calc
+    def create_web_params():
+        """Create the web parameters object for the model"""
+        web_params = {
+            "npa_num_projects": input.npa_projects_per_year(),
+            "num_converts": input.num_converts_per_project(),
+            "pipe_value_per_user": input.pipe_value_per_user(),
+            "pipe_decomm_cost_per_user": input.pipeline_decomm_cost_per_user(),
+            "peak_kw_winter_headroom": input.peak_kw_winter_headroom(),
+            "peak_kw_summer_headroom": input.peak_kw_summer_headroom(),
+            "aircon_percent_adoption_pre_npa": input.aircon_percent_adoption_pre_npa(),
+            "non_npa_scattershot_electrifiction_users_per_year": 0,
+            "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
+            "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
+            "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
+            "is_scattershot": False,
+        }
 
+        return web_params
+    
+    @reactive.calc
+    def create_gas_params():
+        """Create the parameters object for the model"""
+        gas_params = nhp.params.GasParams(
+            baseline_non_lpp_ratebase_growth=input.baseline_non_lpp_ratebase_growth(),
+            default_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
+            pipeline_depreciation_lifetime=input.pipeline_depreciation_lifetime(),
+            non_lpp_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
+            gas_generation_cost_per_therm_init=input.gas_generation_cost_per_therm_init(),
+            num_users_init=input.gas_num_users_init(),
+            per_user_heating_need_therms=input.per_user_heating_need_therms(),
+            pipeline_maintenance_cost_pct=input.pipeline_maintenance_cost_pct(),
+            ratebase_init=input.gas_ratebase_init(),
+            ror=input.gas_ror()
+        )
+        return gas_params
+        
+    @reactive.calc
+    def create_electric_params():
+        """Create the parameters object for the model"""
+        electric_params = nhp.params.ElectricParams(
+            aircon_peak_kw=input.aircon_peak_kw(),  # peak energy consumption of a household airconditioning unit
+            baseline_non_npa_ratebase_growth=input.baseline_non_npa_ratebase_growth(),
+            default_depreciation_lifetime=input.electric_default_depreciation_lifetime(),
+            grid_upgrade_depreciation_lifetime=input.grid_upgrade_depreciation_lifetime(),
+            distribution_cost_per_peak_kw_increase_init=input.distribution_cost_per_peak_kw_increase_init(),
+            electric_maintenance_cost_pct=input.electric_maintenance_cost_pct(),
+            electricity_generation_cost_per_kwh_init=input.electricity_generation_cost_per_kwh_init(),
+            hp_efficiency=input.hp_efficiency(),
+            hp_peak_kw=input.hp_peak_kw(),
+            num_users_init=input.electric_num_users_init(),
+            per_user_electric_need_kwh=input.per_user_electric_need_kwh(),
+            ratebase_init=input.electric_ratebase_init(),
+            user_bill_fixed_cost_pct=input.user_bill_fixed_cost_pct(),
+            ror=input.electric_ror()
+        )
+        return electric_params
+
+    @reactive.calc
+    def create_shared_params():
+        """Create the parameters object for the model"""
+        shared_params = nhp.params.SharedParams(
+          cost_inflation_rate=input.cost_inflation_rate(), 
+          discount_rate=input.discount_rate(), 
+          npa_install_costs_init=input.npa_install_costs_init(),
+          npa_lifetime=input.npa_lifetime(), 
+          start_year=input.start_year())
+
+        
+        return shared_params
+    @reactive.calc
+    def create_input_params():
+        """Create the parameters object for the model"""
+        input_params = nhp.params.InputParams(
+            gas=create_gas_params(),
+            electric=create_electric_params(),
+            shared=create_shared_params()
+        )
+        return input_params
+
+    @reactive.calc
+    def create_ts_inputs():
+        """Create the time series inputs for the model"""
+        web_params = create_web_params()
+        return nhp.params.load_time_series_params_from_web_params(web_params, input.start_year(), input.end_year())
+    
+    @reactive.calc
+    def create_scenario_runs():
+        """Create the scenario parameters for the model"""
+        return nhp.model.create_scenario_runs(input.start_year(), input.end_year(), ["gas", "electric"], ["capex", "opex"])
+
+    @reactive.calc
+    def run_model():
+        scenario_runs = create_scenario_runs()
+        input_params = create_input_params()
+        ts_params = create_ts_inputs()
+        _, delta_bau_df = nhp.model.analyze_scenarios(scenario_runs, input_params, ts_params)
+        
+        return delta_bau_df
+    @reactive.calc
+    def prep_df_to_plot():
+        df = run_model()
+        plt_df = nhp.utils.transform_to_long_format(df)
+        return plt_df
     # REACTIVE DATA HANDLING
         # Reactive data preparation
     @reactive.calc
@@ -220,28 +343,87 @@ def server(input, output, session):
 
     @render_plotly
     def utility_revenue_reqs_chart():
-
-        df = prepare_data()
+        df = prep_df_to_plot()
         
-        return plot_ratebase(df)
+        return plot_utility_metric(
+            plt_df=df,
+            column="inflation_adjusted_revenue_requirement", 
+            title="Utility Revenue Requirements",
+            y_label_unit="$"
+        )
 
     @render_plotly
     def volumetric_tariff_chart():
-        df = prepare_data()
+        df = prep_df_to_plot()
         
-        return plot_ratebase(df)
+        return plot_utility_metric(
+            plt_df=df,
+            column="variable_cost",
+            title="Volumetric Tariff",
+            y_label_unit="$/unit"
+        )
 
     @render_plotly
     def ratebase_chart():
-        df = prepare_data()
-        
-        return plot_ratebase(df)
+        try:
+            print("ratebase_chart called")
+            df = prep_df_to_plot()
+            print(f"Got df with shape: {df.shape if hasattr(df, 'shape') else 'no shape'}")
+            print(f"Columns: {df.columns if hasattr(df, 'columns') else 'no columns'}")
+            
+            fig = plot_utility_metric(
+                plt_df=df,
+                column="ratebase",
+                title="Ratebase",
+                y_label_unit="$"
+            )
+            print("plot_utility_metric completed")
+            return fig
+        except Exception as e:
+            print(f"Error in ratebase_chart: {e}")
+            import traceback
+            traceback.print_exc()
+            # Return a simple test plot
+            return go.Figure().add_annotation(text=f"Error: {str(e)}", x=0.5, y=0.5)
 
     @render_plotly
     def depreciation_accruals_chart():
-        df = prepare_data()
+        df = prep_df_to_plot()
         
-        return plot_ratebase(df)
+        return plot_utility_metric(
+            plt_df=df,
+            column="depreciation_expense",
+            title="Depreciation Accruals*",
+            y_label_unit="$"
+        )
 
+    @render_plotly
+    def nonconverts_bill_per_user_chart():
+        df = prep_df_to_plot()
+        
+        return plot_utility_metric(
+            plt_df=df,
+            column="nonconverts_bill_per_user",
+            title="",
+            y_label_unit="$"
+        )
+    @render_plotly
+    def converts_bill_per_user_chart():
+        df = prep_df_to_plot()
+        
+        return plot_utility_metric(
+            plt_df=df,
+            column="converts_bill_per_user",
+            title="",
+            y_label_unit="$"
+        )
+    
+    @render_plotly
+    def total_bills_chart():
+        df = run_model()
+        
+        return plot_total_bills(
+            delta_bau_df=df
+        )
 
 app = App(app_ui, server)
