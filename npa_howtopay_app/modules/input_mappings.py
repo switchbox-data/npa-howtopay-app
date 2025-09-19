@@ -25,7 +25,7 @@ PIPELINE_INPUTS = {
     "npa_install_costs_init": {
         "label": "NPA cost per household",
         "config_path": ["shared", "npa_install_costs_init"],
-        "tooltip": "Initial cost per household to install NPA equipment"
+        "tooltip": "Initial cost per household to install NPA equipment (exlcluding any incentive programs). Cost will grow annually by the cost inflation rate."
     },
     "npa_projects_per_year": {
         "label": "NPA projects per year",
@@ -93,7 +93,7 @@ ELECTRIC_INPUTS = {
     "electricity_generation_cost_per_kwh_init": {
         "label": "Electricity generation cost per kWh",
         "config_path": ["electric", "electricity_generation_cost_per_kwh_init"],
-        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year"
+        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year. This cost will grow annually by the cost inflation rate."
     },
     "electric_ratebase_init": {
         "label": "Electric ratebase",
@@ -101,9 +101,9 @@ ELECTRIC_INPUTS = {
         "tooltip": "Initial value of electric utility's ratebase (total assets)"
     },
     "electric_ror": {
-        "label": "Rate on return (%)",
+        "label": "Rate of return (%)",
         "config_path": ["electric", "ror"],
-        "tooltip": "Return on capital rate for electric utility investments (after taxes)"
+        "tooltip": "Total rate of return, which is a combination of return on capital and return on debt for electric utility investments (after taxes)"
     },
     "electric_fixed_overhead_costs": {
         "label": "Electric fixed overhead costs",
@@ -128,7 +128,7 @@ ELECTRIC_INPUTS = {
     "aircon_peak_kw": {
         "label": "Aircon peak kW",
         "config_path": ["electric", "aircon_peak_kw"],
-        "tooltip": "Peak energy consumption of a household's current airconditioning unit"
+        "tooltip": "Peak energy consumption of a household's new airconditioning unit. Used to estimate additional summerelectric demand for converters without AC prior to NPA."
     },
     "hp_peak_kw": {        
         "label": "Heat pump peak kW",
@@ -138,7 +138,7 @@ ELECTRIC_INPUTS = {
     "distribution_cost_per_peak_kw_increase_init": {
         "label": "Distribution cost per peak kW increase",
         "config_path": ["electric", "distribution_cost_per_peak_kw_increase_init"],
-        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand"
+        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand. This costs will grow annually by the cost inflation rate."
     }
 }
 
@@ -154,19 +154,19 @@ GAS_INPUTS = {
         "tooltip": "Initial value of gas utility's ratebase (total assets)"
     },
     "gas_ror": {
-        "label": "Rate on return (%)",
+        "label": "Rate of return (%)",
         "config_path": ["gas", "ror"],
-        "tooltip": "Return on capital rate for gas utility investments (after taxes)"
+        "tooltip": "Total rate of return, which is a combination of return on capital and return on debt for gas utility investments (after taxes)"
     },
     "gas_fixed_overhead_costs": {
         "label": "Gas fixed overhead costs",
         "config_path": ["web_params", "gas_fixed_overhead_costs"],
-        "tooltip": "Fixed annual overhead costs for gas utility"
+        "tooltip": "Fixed annual overhead costs for gas utility. These costs will grow annually by the cost inflation rate."
     },
     "gas_bau_lpp_costs_per_year": {
         "label": "Gas BAU pipeline replacement costs per year",
         "config_path": ["web_params", "gas_bau_lpp_costs_per_year"],
-        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU)"
+        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU). These costs will grow annually by the cost inflation rate."
     },
     "baseline_non_lpp_ratebase_growth": {
         "label": "Baseline non-LPP ratebase growth",
@@ -186,7 +186,7 @@ GAS_INPUTS = {
     "gas_generation_cost_per_therm_init": {
         "label": "Gas generation cost per therm",
         "config_path": ["gas", "gas_generation_cost_per_therm_init"],
-        "tooltip": "Cost per therm of natural gas in the initial year"
+        "tooltip": "Cost per therm of natural gas in the initial year. These costs will grow annually by the cost inflation rate."
     },
     "per_user_heating_need_therms": {
         "label": "Per user heating need (therms)",

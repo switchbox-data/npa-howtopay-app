@@ -46,7 +46,7 @@ shared:
 npa:
   pipe_value_per_user: 30.0e3
   pipeline_decomm_cost_per_user: 0
-  npa_projects_per_year: 2
+  npa_projects_per_year: 100
   num_converts_per_project: 5
   peak_kw_summer_headroom: 1500
   peak_kw_winter_headroom: 2000
