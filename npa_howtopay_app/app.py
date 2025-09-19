@@ -395,7 +395,7 @@ def server(input, output, session):
             plt_df=df,
             column="return_on_ratebase_pct",
             title="",
-            y_label_unit="%"
+            y_label_unit="% of revenue requirement"
         )
     @render.text
     def return_component_chart_description():
