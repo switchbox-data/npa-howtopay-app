@@ -12,6 +12,7 @@ switchbox_colors = {
     'electric_opex': '#68BED8',      # sb-sky
     'electric_capex': '#023047',     # sb-midnight
     'taxpayer': '#FC9706',  # sb-carrot
+    'bau': '#FFC729', # sb-saffron
 }
 
 line_styles = {
@@ -20,6 +21,7 @@ line_styles = {
     'electric_opex': 'dash',
     'electric_capex': 'solid',
     'taxpayer': 'solid',
+    'bau': 'solid',
 }
 
 scenario_labels = {
@@ -28,6 +30,7 @@ scenario_labels = {
     'electric_opex': 'Electric Opex',
     'electric_capex': 'Electric Capex',
     'taxpayer': 'Taxpayer',
+    'bau': 'BAU',
 }
 
 def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float]:
@@ -51,8 +54,10 @@ def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float
         return ('$,.0f', ' Thousand', 1_000)
     elif max_abs_value >= 10:  # Between $10 and $999
         return ('$,.0f', '', 1)
-    else:  # Less than $10
+    elif max_abs_value >= 1:  # Between $1 and $9.99
         return ('$.2f', '', 1)  # Changed from '$,.2f' to '$.2f'
+    else:
+        return ('$,.3f', '', 1)
 
 def apply_plot_theme(fig):
     """
@@ -196,7 +201,8 @@ def plot_utility_metric(
     )
     
     # Add horizontal line at y=0
-    fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Format y-axis based on unit type
     if y_label_unit == "$":
@@ -260,7 +266,8 @@ def plot_grid(df, my_colors=switchbox_colors):
     )
     
     # Add horizontal line at y=0
-    fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Apply theme
     fig = apply_plot_theme(fig)
@@ -366,7 +373,8 @@ def plot_total_bills(
     )
     
     # Add horizontal line at y=0
-    fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Format y-axis with detected tick format
     fig.update_yaxes(tickformat=tick_format)
