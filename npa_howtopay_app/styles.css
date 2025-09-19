@@ -428,3 +428,22 @@ body {
 .tooltip.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
   border-left-color: var(--sb-pistachio-text);
 }
+
+/* Download Button Styling */
+#download_data {
+  background-color: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+  font-size: 0.875rem !important;
+  border: var(--sb-white) !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+#download_data:hover {
+  background-color: var(--sb-midnight) !important;
+  color: var(--sb-carrot) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3) !important;
+}

@@ -2,6 +2,7 @@ import plotly.express as px
 import polars as pl
 from pathlib import Path
 import tempfile
+import io
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui
 import npa_howtopay as nhp
@@ -54,13 +55,16 @@ ui.page_sidebar(
         create_input_with_tooltip("npa_projects_per_year"),
         create_input_with_tooltip("num_converts_per_project"),
         create_input_with_tooltip("npa_lifetime"),
+        ui.h4("Project Grid Parameters"),
         create_input_with_tooltip("peak_kw_summer_headroom"),
         create_input_with_tooltip("peak_kw_winter_headroom"),
+        ui.h4("Project Appliance Parameters"),
         create_input_with_tooltip("hp_peak_kw"),
         create_input_with_tooltip("aircon_peak_kw"),
         create_input_with_tooltip("aircon_percent_adoption_pre_npa"),
         create_input_with_tooltip("hp_efficiency"),
         create_input_with_tooltip("water_heater_efficiency"),
+        ui.h4("Project Energy Use Parameters"),
         create_input_with_tooltip("per_user_heating_need_therms"),
         create_input_with_tooltip("per_user_water_heating_need_therms"),
       ),
@@ -147,18 +151,22 @@ ui.page_sidebar(
 
     ui.card(
       ui.card_header("Utility Revenue Requirements"),
+      ui.output_text("utility_revenue_reqs_chart_description"),
       output_widget("utility_revenue_reqs_chart"),
     ),
     ui.card(
       ui.card_header("Volumetric Tariff"),
+      ui.output_text("volumetric_tariff_chart_description"),
       output_widget("volumetric_tariff_chart"),
     ),
     ui.card(
       ui.card_header("Ratebase"),
+      ui.output_text("ratebase_chart_description"),
       output_widget("ratebase_chart"),
     ),
     ui.card(
       ui.card_header("Return on Ratebase as % of Revenue Requirement"),
+      ui.output_text("return_component_chart_description"),
       output_widget("return_component_chart"),
     ),
     col_widths={"sm": (12, 12,12, 6, 6, 6, 6)},
@@ -328,6 +336,10 @@ def server(input, output, session):
             y_label_unit="$"
         )
 
+    @render.text
+    def utility_revenue_reqs_chart_description():
+        return "Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses."
+
     @render_plotly
     def volumetric_tariff_chart():
         df = prep_df_to_plot()
@@ -338,6 +350,10 @@ def server(input, output, session):
             title="Volumetric Tariff",
             y_label_unit="$/unit"
         )
+
+    @render.text
+    def volumetric_tariff_chart_description():
+        return "Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def ratebase_chart():
@@ -361,6 +377,9 @@ def server(input, output, session):
             traceback.print_exc()
             # Return a simple test plot
             return go.Figure().add_annotation(text=f"Error: {str(e)}", x=0.5, y=0.5)
+    @render.text
+    def ratebase_chart_description():
+        return "Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def return_component_chart():
@@ -372,6 +391,9 @@ def server(input, output, session):
             title="",
             y_label_unit="%"
         )
+    @render.text
+    def return_component_chart_description():
+        return "Difference in return on ratebase as a percentage of revenue requirement for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def nonconverts_bill_per_user_chart():
@@ -385,7 +407,7 @@ def server(input, output, session):
         )
     @render.text
     def nonconverts_bill_per_user_chart_description():
-        return "Nonconverts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+        return "Difference in nonconverts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
 
     @render_plotly
     def converts_bill_per_user_chart():
@@ -399,7 +421,7 @@ def server(input, output, session):
         )
     @render.text
     def converts_bill_per_user_chart_description():
-        return "Converts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+        return "Difference in converts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
     
     @render_plotly
     def total_bills_chart():
@@ -411,15 +433,22 @@ def server(input, output, session):
 
     @render.text
     def total_bills_chart_description():
-        return "Total bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
+        return "Difference in total bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
 
-    @render.download()
+    @render.download(
+        filename=lambda: f'{input.run_name()}_data.csv',
+        media_type="text/csv"
+    )
     def download_data():
         df_to_download = run_model()
-        filename = f'{input.run_name()}_data.csv'
+
+        # Use BytesIO buffer to capture CSV output
+
+        buffer = io.BytesIO()
+        df_to_download.write_csv(buffer)
+        buffer.seek(0)
         
-        # Return (content, filename) tuple
-        csv_content = df_to_download.write_csv()
-        return csv_content, filename
+        # Yield the buffer content
+        yield buffer.getvalue()
 
 app = App(app_ui, server)
