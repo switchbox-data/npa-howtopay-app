@@ -71,6 +71,22 @@ body {
   align-items: center;
 }
 
+/* Add this after the .app-header rule (around line 72) */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Update button widths since they're now in a flex container */
+#download_data,
+#custom_bookmark_btn {
+  width: auto !important;
+  /* Remove the 25% width */
+  min-width: 150px !important;
+  /* Set a minimum width instead */
+}
+
 .app-title {
   margin: 0;
   font-size: 1.8rem;
@@ -434,16 +450,41 @@ body {
   background-color: var(--sb-midnight) !important;
   color: var(--sb-white) !important;
   font-size: 0.875rem !important;
-  border: var(--sb-white) !important;
+  border: 1px solid var(--sb-white) !important;
   padding: 8px 16px !important;
   border-radius: 6px !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
+  width: 10% !important;
 }
 
 #download_data:hover {
   background-color: var(--sb-midnight) !important;
   color: var(--sb-carrot) !important;
+  border: 1px solid var(--sb-carrot) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3) !important;
+}
+
+/* Bookmark Button Styling - Custom ID approach */
+#custom_bookmark_btn {
+  background-color: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+  font-size: 0.875rem !important;
+  border: 1px solid var(--sb-white) !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  width: 10% !important;
+  text-decoration: none !important;
+}
+
+#custom_bookmark_btn:hover {
+  background-color: var(--sb-midnight) !important;
+  color: var(--sb-carrot) !important;
+  border: 1px solid var(--sb-carrot) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3) !important;
+  text-decoration: none !important;
 }

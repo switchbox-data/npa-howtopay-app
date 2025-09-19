@@ -31,12 +31,17 @@ def create_input_with_tooltip(input_id):
         input_data["tooltip"]
     )
 
-app_ui = ui.page_fluid(
+def app_ui(request):
+    return ui.page_fluid(
+ui.div(
+  ui.h1("NPA How to Pay", class_="app-title"),
   ui.div(
-    ui.h1("NPA How to Pay", class_="app-title"),
-    ui.download_button("download_data", "Download Data", width="25%"),
-    class_="app-header"
+    ui.download_button("download_data", "Download Data"),
+    ui.input_bookmark_button("Bookmark Current Scenario", icon=None,  id="custom_bookmark_btn"),
+    class_="button-group"
   ),
+  class_="app-header"
+),
 ui.page_sidebar(
   ui.sidebar(
     ui.card(
@@ -452,4 +457,15 @@ def server(input, output, session):
         # Yield the buffer content
         yield buffer.getvalue()
 
-app = App(app_ui, server)
+    # Custom bookmark button handler
+    @reactive.effect
+    @reactive.event(input.custom_bookmark_btn)
+    async def _():
+        await session.bookmark()
+
+    # Bookmark handler
+    @session.bookmark.on_bookmarked
+    async def _(url: str):
+        await session.bookmark.update_query_string(url)
+
+app = App(app_ui, server, bookmark_store="url")
