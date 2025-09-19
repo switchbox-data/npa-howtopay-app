@@ -78,12 +78,12 @@ ui.page_sidebar(
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
+        create_input_with_tooltip("electric_user_bill_fixed_charge"),
         create_input_with_tooltip("electric_ratebase_init"),
         create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
         create_input_with_tooltip("electric_ror"),
         create_input_with_tooltip("electric_default_depreciation_lifetime"),
         create_input_with_tooltip("electric_fixed_overhead_costs"),
-        create_input_with_tooltip("user_bill_fixed_charge"),
         create_input_with_tooltip("electric_maintenance_cost_pct"),
         ui.h4("Electric Grid Parameters"),
         create_input_with_tooltip("electricity_generation_cost_per_kwh_init"),
@@ -94,6 +94,7 @@ ui.page_sidebar(
       ),
       ui.nav_panel("Gas", ui.h4("Gas Utility Financials"),
         create_input_with_tooltip("gas_num_users_init"),
+        create_input_with_tooltip("gas_user_bill_fixed_charge"),
         create_input_with_tooltip("gas_ratebase_init"),
         create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
         create_input_with_tooltip("gas_ror"),
@@ -237,7 +238,7 @@ def server(input, output, session):
             num_users_init=input.gas_num_users_init(),
             per_user_heating_need_therms=input.per_user_heating_need_therms(),
             per_user_water_heating_need_therms=input.per_user_water_heating_need_therms(),
-            user_bill_fixed_charge=input.user_bill_fixed_charge(),
+            user_bill_fixed_charge=input.gas_user_bill_fixed_charge(),
             pipeline_maintenance_cost_pct=input.pipeline_maintenance_cost_pct(),
             ratebase_init=input.gas_ratebase_init(),
             ror=input.gas_ror()
@@ -261,7 +262,7 @@ def server(input, output, session):
             num_users_init=input.electric_num_users_init(),
             per_user_electric_need_kwh=input.per_user_electric_need_kwh(),
             ratebase_init=input.electric_ratebase_init(),
-            user_bill_fixed_charge=input.user_bill_fixed_charge(),
+            user_bill_fixed_charge=input.electric_user_bill_fixed_charge(),
             ror=input.electric_ror()
         )
         return electric_params

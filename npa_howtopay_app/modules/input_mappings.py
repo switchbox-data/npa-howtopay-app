@@ -110,8 +110,8 @@ ELECTRIC_INPUTS = {
         "config_path": ["web_params", "electric_fixed_overhead_costs"],
         "tooltip": "Fixed annual overhead costs for electric utility"
     },
-    "user_bill_fixed_charge": {
-        "label": "User bill annual fixed charge ($)",
+    "electric_user_bill_fixed_charge": {
+        "label": "Customer bill annual fixed charge ($)",
         "config_path": ["electric", "user_bill_fixed_charge"],
         "tooltip": "Annual fixed charge per customer ($)"
     },
@@ -177,6 +177,11 @@ GAS_INPUTS = {
         "label": "Non-pipeline depreciation lifetime",
         "config_path": ["gas", "non_lpp_depreciation_lifetime"],
         "tooltip": "Depreciation lifetime for non-pipeline gas utility assets"
+    },
+    "gas_user_bill_fixed_charge": {
+        "label": "Customer bill annual fixed charge ($)",
+        "config_path": ["gas", "user_bill_fixed_charge"],
+        "tooltip": "Annual fixed charge per customer ($)"
     },
     "gas_generation_cost_per_therm_init": {
         "label": "Gas generation cost per therm",
