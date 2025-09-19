@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import io
 from shinywidgets import output_widget, render_plotly
-from shiny import App, reactive, render, ui
+from shiny import App, reactive, render, ui, req
 import npa_howtopay as nhp
 import plotly.graph_objects as go
 # Import from modules
@@ -14,7 +14,7 @@ from modules.input_mappings import (
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
 from modules.plotting import plot_utility_metric, plot_grid, plot_total_bills
-
+from npa_howtopay.params import COMPARE_COLS
 
 css_file = Path(__file__).parent / "styles.css"
 # Load configurations
@@ -132,7 +132,11 @@ ui.page_sidebar(
         # Start and end year inputs
         create_input_with_tooltip("start_year"),
         create_input_with_tooltip("end_year"),
-        col_widths={"sm": (6, 6)}
+        ui.tooltip(
+        ui.input_switch("show_absolute", "Show Absolute Values", value=False),
+        "Toggle between showing absolute values and deltas from BAU."
+        ),
+        col_widths={"sm": (5, 5, 2)}
       ),
     #   ui.layout_columns(
     #     ui.download_button("download_data", "Download Data", width="25%"),
@@ -140,12 +144,12 @@ ui.page_sidebar(
     # ),
     ),
     ui.card(
-      ui.card_header("Total Bills"),
+      ui.card_header("Combined Delivery Bills"),
       ui.output_text("total_bills_chart_description"),
       output_widget("total_bills_chart"),
     ),
     ui.card(
-      ui.card_header("Changes to Average Household Delivery Bills"),
+      ui.card_header("Average Household Delivery Bills"),
       # output_widget("changes_to_hh_delivery_charges_chart"),
       ui.h6("Nonconverts"),
       ui.output_text("nonconverts_bill_per_user_chart_description"),
@@ -306,21 +310,65 @@ def server(input, output, session):
         """Create the scenario parameters for the model"""
         return nhp.model.create_scenario_runs(input.start_year(), input.end_year(), ["gas", "electric"], ["capex", "opex"])
 
-   # MODEL FUNCTIONSA
+   # MODEL FUNCTIONS
 
     @reactive.calc
     def run_model():
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
         ts_params = create_ts_inputs()
-        _, delta_bau_df = nhp.model.analyze_scenarios(scenario_runs, input_params, ts_params)
+        results_all, _ = nhp.model.analyze_scenarios(scenario_runs, input_params, ts_params)
         
-        return delta_bau_df
+        return results_all
+
+    @reactive.calc
+    def return_delta_or_absolute_df():
+        results_all = run_model()
+        print("results_all type:", type(results_all))
+        print("results_all keys:", results_all.keys() if isinstance(results_all, dict) else "Not a dict")
+        
+        # Check if input is available
+        try:
+            show_absolute = input.show_absolute()
+            print(f"show_absolute value: {show_absolute}")
+        except Exception as e:
+            print(f"Error accessing show_absolute: {e}")
+            show_absolute = False  # Default to False
+        
+        if show_absolute:
+            print("Taking absolute path")
+            filtered_results = {}
+            for scenario_name, scenario_df in results_all.items():
+
+                filtered_results[scenario_name] = scenario_df.select(["year", *COMPARE_COLS])
+                print(f"Added {scenario_name} with shape {scenario_df.shape}")
+
+            print(f"filtered_results keys: {filtered_results.keys()}")
+            # Concatenate and transform to long format
+            combined_df = pl.concat(
+                [df.with_columns(pl.lit(scenario_id).alias("scenario_id")) for scenario_id, df in filtered_results.items()],
+                how="vertical",
+            )
+            print("combined_df type:", type(combined_df))
+            print("combined_df shape:", combined_df.shape)
+            
+        else:
+            print("Taking delta path")
+            combined_df = nhp.model.create_delta_bau_df(results_all, COMPARE_COLS)
+            print("combined_df type:", type(combined_df))
+            print("combined_df shape:", combined_df.shape)
+        
+        return combined_df
     @reactive.calc
     def prep_df_to_plot():
-        df = run_model()
-        plt_df = nhp.utils.transform_to_long_format(df)
+        combined_df = return_delta_or_absolute_df()
+        
+        plt_df = nhp.utils.transform_to_long_format(combined_df)
+        print("Final plt_df type:", type(plt_df))
+        print("Final plt_df shape:", plt_df.shape)
+        print("Final plt_df columns:", plt_df.columns)
         return plt_df
+
 
  # PLOTTING FUNCTIONS  
 
@@ -328,125 +376,149 @@ def server(input, output, session):
     @render_plotly
     def changes_to_hh_delivery_charges_chart():
         df = prepare_data_grid()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         return plot_grid(df)
 
 
     @render_plotly
     def utility_revenue_reqs_chart():
         df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_utility_metric(
             plt_df=df,
             column="inflation_adjusted_revenue_requirement", 
             title="Utility Revenue Requirements",
-            y_label_unit="$"
+            y_label_unit="$",
+            show_absolute=input.show_absolute()
         )
 
     @render.text
     def utility_revenue_reqs_chart_description():
-        return "Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses."
+        if input.show_absolute():
+            return "Utility revenue requirements for gas and electric. These are the revenue requirements for the utility to cover its costs and expenses."
+        else:
+          return "Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses."
 
     @render_plotly
     def volumetric_tariff_chart():
         df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_utility_metric(
             plt_df=df,
             column="variable_tariff",
             title="Volumetric Tariff",
-            y_label_unit="$/unit"
+            y_label_unit="$/unit",
+            show_absolute=input.show_absolute()
         )
 
     @render.text
     def volumetric_tariff_chart_description():
-        return "Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+        if input.show_absolute():
+            return "Volumetric tariffs for gas (therms) and electric (kWh)."
+        else:
+          return "Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def ratebase_chart():
-        try:
-            print("ratebase_chart called")
-            df = prep_df_to_plot()
-            print(f"Got df with shape: {df.shape if hasattr(df, 'shape') else 'no shape'}")
-            print(f"Columns: {df.columns if hasattr(df, 'columns') else 'no columns'}")
-            
-            fig = plot_utility_metric(
-                plt_df=df,
-                column="ratebase",
-                title="Ratebase",
-                y_label_unit="$"
-            )
-            print("plot_utility_metric completed")
-            return fig
-        except Exception as e:
-            print(f"Error in ratebase_chart: {e}")
-            import traceback
-            traceback.print_exc()
-            # Return a simple test plot
-            return go.Figure().add_annotation(text=f"Error: {str(e)}", x=0.5, y=0.5)
+        df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
+        
+        return plot_utility_metric(
+            plt_df=df,
+            column="ratebase",
+            title="Ratebase",
+            y_label_unit="$",
+            show_absolute=input.show_absolute()
+        )
     @render.text
     def ratebase_chart_description():
-        return "Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+        if input.show_absolute():
+            return "Annual ratebase for gas and electric."
+        else:
+          return "Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def return_component_chart():
         df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_utility_metric(
             plt_df=df,
             column="return_on_ratebase_pct",
             title="",
-            y_label_unit="% of revenue requirement"
+            y_label_unit="% of revenue requirement",
+            show_absolute=input.show_absolute()
         )
     @render.text
     def return_component_chart_description():
-        return "Difference in return on ratebase as a percentage of revenue requirement for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+        if input.show_absolute():
+            return "Return on ratebase as a percentage of revenue requirement for gas and electric."
+        else:
+          return "Difference in return on ratebase as a percentage of revenue requirement for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
 
     @render_plotly
     def nonconverts_bill_per_user_chart():
         df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_utility_metric(
             plt_df=df,
             column="nonconverts_bill_per_user",
             title="",
-            y_label_unit="$"
+            y_label_unit="$",   
+            show_absolute=input.show_absolute()
         )
     @render.text
     def nonconverts_bill_per_user_chart_description():
-        return "Difference in nonconverts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+        if input.show_absolute():
+            return "Nonconverts annual bills for gas and electric."
+        else:
+          return "Difference in nonconverts annual bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
 
     @render_plotly
     def converts_bill_per_user_chart():
         df = prep_df_to_plot()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_utility_metric(
             plt_df=df,
             column="converts_bill_per_user",
             title="",
-            y_label_unit="$"
+            y_label_unit="$",   
+            show_absolute=input.show_absolute()
         )
     @render.text
     def converts_bill_per_user_chart_description():
-        return "Difference in converts bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+        if input.show_absolute():
+          return "Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+        else:
+          return "Difference in converts annual bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
     
     @render_plotly
     def total_bills_chart():
-        df = run_model()
+        df = return_delta_or_absolute_df()
+        req(not df.is_empty())  # Check that DataFrame is not empty
         
         return plot_total_bills(
-            delta_bau_df=df
+            delta_bau_df=df,
         )
 
     @render.text
     def total_bills_chart_description():
-        return "Difference in total bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
+        if input.show_absolute():
+            return "Combined delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+        else:
+          return "Difference in combined delivery bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
+
 
     @render.download(
         filename=lambda: f'{input.run_name()}_data.csv',
         media_type="text/csv"
     )
     def download_data():
-        df_to_download = run_model()
+        df_to_download = return_delta_or_absolute_df()
 
         # Use BytesIO buffer to capture CSV output
 
