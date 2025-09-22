@@ -9,11 +9,12 @@ gas:
   gas_generation_cost_per_therm_init: 3  # cost per therm of natural gas, in initial year of model
   num_users_init: 1e6  # initial number of gas users
   per_user_heating_need_therms: 800.0  # household annual heating need in therms
-  pipeline_maintenance_cost_pct: 4  # yearly opex as a perecent of existing ratebase value (not including npas)
+  per_user_water_heating_need_therms: 100.0  # household annual water heating need in therms
+  pipeline_maintenance_cost_pct: 0.04  # yearly opex as a perecent of existing ratebase value (not including npas)
+  user_bill_fixed_charge: 120
   ratebase_init: 8.0e9 # intitial ratebase
   ror: 0.08  # gas utility return on capital
-  gas_fixed_overhead_costs: 500.0e6  # fixed annual overhead costs for gas utility
-  gas_bau_lpp_costs_per_year: 320e6  # gas pipeline replacement costs per year without any NPA projects (BAU)
+
 
 electric:
   aircon_peak_kw: 3.0 # peak energy consumption of a household airconditioning unit
@@ -23,18 +24,19 @@ electric:
   distribution_cost_per_peak_kw_increase_init: 100.0 # cost to increase grid capacity to support one additional kw of peak demand, in initial year of model
   electric_maintenance_cost_pct: 0.04 # yearly opex as a perecent of existing ratebase value (not including npas)
   electricity_generation_cost_per_kwh_init: 0.005 # cost per kwh of electricity generation (just the generation cost), in initial year of model
+  water_heater_efficiency: 3 # water heater efficiency
   hp_efficiency: 4 # hp heating efficiency
   hp_peak_kw: 7.5 # peak energy consumption of a household heat pump unit
   num_users_init: 1.5e6 # initial number of electric users
   per_user_electric_need_kwh: 10.0e3 # per user annual electricity need in kwh
   ratebase_init: 25.0e9 # intitial ratebase
-  user_bill_fixed_cost_pct: 0.05 # percent of revenue requirement that is split evently among households as a fixed cost
+  user_bill_fixed_charge: 240 # annual fixed charge per customer ($)
   ror: 0.08 # electric utility return on capital
-  aircon_percent_adoption_pre_npa: 0.50  # percentage of households that already have air conditioning before NPA
-  electric_fixed_overhead_costs: 400.0e6  # fixed annual overhead costs for electric utility
+
 
 shared:
   cost_inflation_rate: 0.01 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
+  construction_inflation_rate: 0.01 # rate at which construction costs grow from init value; applies to non-lpp and grid upgrade capex projects
   discount_rate: 0.03 # discount rate for converting future revenue requirements and bills into today's dollars
   npa_install_costs_init: 20.0e3 # cost of installing one npa per household, in initial year of model
   npa_lifetime: 15.0 # average lifetime of an installed npa
@@ -44,7 +46,14 @@ shared:
 npa:
   pipe_value_per_user: 30.0e3
   pipeline_decomm_cost_per_user: 0
-  npa_projects_per_year: 2
+  npa_projects_per_year: 100
   num_converts_per_project: 5
   peak_kw_summer_headroom: 1500
   peak_kw_winter_headroom: 2000
+  aircon_percent_adoption_pre_npa: 0.50  # percentage of households that already have air conditioning before NPA
+
+web_params:
+  electric_fixed_overhead_costs: 400.0e6  # fixed annual overhead costs for electric utility
+  gas_fixed_overhead_costs: 500.0e6  # fixed annual overhead costs for gas utility
+  gas_bau_lpp_costs_per_year: 320e6  # gas pipeline replacement costs per year without any NPA projects (BAU)
+  scattershot_electrification_users_per_year: 0

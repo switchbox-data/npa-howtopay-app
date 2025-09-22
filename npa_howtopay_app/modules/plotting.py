@@ -12,6 +12,7 @@ switchbox_colors = {
     'electric_opex': '#68BED8',      # sb-sky
     'electric_capex': '#023047',     # sb-midnight
     'taxpayer': '#FC9706',  # sb-carrot
+    'bau': '#FFC729', # sb-saffron
 }
 
 line_styles = {
@@ -20,6 +21,7 @@ line_styles = {
     'electric_opex': 'dash',
     'electric_capex': 'solid',
     'taxpayer': 'solid',
+    'bau': 'solid',
 }
 
 scenario_labels = {
@@ -28,6 +30,7 @@ scenario_labels = {
     'electric_opex': 'Electric Opex',
     'electric_capex': 'Electric Capex',
     'taxpayer': 'Taxpayer',
+    'bau': 'BAU',
 }
 
 def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float]:
@@ -44,15 +47,17 @@ def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float
     max_abs_value = float(data_values.abs().max())
     
     if max_abs_value >= 1_000_000_000:  # Billions
-        return ('$,.1f', 'B', 1_000_000_000)
+        return ('$,.1f', ' Billion', 1_000_000_000)
     elif max_abs_value >= 1_000_000:  # Millions
-        return ('$,.1f', 'M', 1_000_000)
+        return ('$,.1f', ' Million', 1_000_000)
     elif max_abs_value >= 1_000:  # Thousands
-        return ('$,.0f', 'K', 1_000)
+        return ('$,.0f', ' Thousand', 1_000)
     elif max_abs_value >= 10:  # Between $10 and $999
         return ('$,.0f', '', 1)
-    else:  # Less than $10
+    elif max_abs_value >= 1:  # Between $1 and $9.99
         return ('$.2f', '', 1)  # Changed from '$,.2f' to '$.2f'
+    else:
+        return ('$,.3f', '', 1)
 
 def apply_plot_theme(fig):
     """
@@ -124,6 +129,15 @@ def plot_utility_metric(
         plot_column = f"{column}_scaled"
         # Update y-axis label with suffix
         y_label_with_suffix = f"{y_label_unit}{suffix}" if suffix else y_label_unit
+    elif "%" in y_label_unit:
+        # Scale the data for display
+        plt_df = plt_df.with_columns(
+            (pl.col(column) * 100).alias(f"{column}_scaled")
+        )
+        tick_format = '.2f'
+        suffix = "%"
+        plot_column = f"{column}_scaled"
+        y_label_with_suffix = y_label_unit
     else:
         # For non-dollar units, use original formatting
         tick_format = '.3f' if "/" in y_label_unit else ',.0f'
@@ -163,7 +177,7 @@ def plot_utility_metric(
     
     # Add main y-axis label
     fig.add_annotation(
-        x=-0.1,
+        x=-0.15,
         y=0.5,
         text=y_label,
         textangle=-90,
@@ -185,6 +199,10 @@ def plot_utility_metric(
             x=0.5
         )
     )
+    
+    # Add horizontal line at y=0
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Format y-axis based on unit type
     if y_label_unit == "$":
@@ -246,6 +264,10 @@ def plot_grid(df, my_colors=switchbox_colors):
     xref="paper",
     yref="paper"
     )
+    
+    # Add horizontal line at y=0
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Apply theme
     fig = apply_plot_theme(fig)
@@ -349,6 +371,10 @@ def plot_total_bills(
             x=0.5
         )
     )
+    
+    # Add horizontal line at y=0
+    if not show_absolute:
+        fig.add_hline(y=0, line_dash="solid", line_color="darkgray", line_width=1)
     
     # Format y-axis with detected tick format
     fig.update_yaxes(tickformat=tick_format)

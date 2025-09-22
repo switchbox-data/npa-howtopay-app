@@ -6,11 +6,11 @@ PIPELINE_INPUTS = {
         "config_path": ["npa", "pipe_value_per_user"],
         "tooltip": "Pipeline replacement cost per NPA household"
     },
-    "pipeline_decomm_cost_per_user": {
-        "label": "Pipeline decommissioning cost per household",
-        "config_path": ["npa", "pipeline_decomm_cost_per_user"],
-        "tooltip": "Pipeline decommissioning cost per NPA household"
-    },
+    # "pipeline_decomm_cost_per_user": {
+    #     "label": "Pipeline decommissioning cost per household",
+    #     "config_path": ["npa", "pipeline_decomm_cost_per_user"],
+    #     "tooltip": "Pipeline decommissioning cost per NPA household"
+    # },
     "pipeline_depreciation_lifetime": {
         "label": "Pipeline depreciation",
         "config_path": ["gas", "pipeline_depreciation_lifetime"],
@@ -25,7 +25,7 @@ PIPELINE_INPUTS = {
     "npa_install_costs_init": {
         "label": "NPA cost per household",
         "config_path": ["shared", "npa_install_costs_init"],
-        "tooltip": "Initial cost per household to install NPA equipment"
+        "tooltip": "Initial cost per household to install NPA equipment (exlcluding any incentive programs). Cost will grow annually by the cost inflation rate."
     },
     "npa_projects_per_year": {
         "label": "NPA projects per year",
@@ -45,22 +45,27 @@ PIPELINE_INPUTS = {
     "hp_efficiency": {
         "label": "HP efficiency",
         "config_path": ["electric", "hp_efficiency"],
-        "tooltip": "Heat pump coefficient of performance (COP) - units of heat per unit of electricity"
+        "tooltip": "Heat pump coefficient of performance (COP) - units of heat per unit of electricity. Used to estimate additional electric demand after conversion"
+    },
+    "water_heater_efficiency": {
+        "label": "Water heater efficiency",
+        "config_path": ["electric", "water_heater_efficiency"],
+        "tooltip": "Water heater efficiency - units of heat per unit of electricity. Used to estimate additional electric demand after conversion"
     },
     "aircon_percent_adoption_pre_npa": {
         "label": "Aircon percent adoption pre-NPA",
-        "config_path": ["electric", "aircon_percent_adoption_pre_npa"],
+        "config_path": ["npa", "aircon_percent_adoption_pre_npa"],
         "tooltip": "Percentage of households that already have air conditioning before NPA"
     },
     "peak_kw_summer_headroom": {
         "label": "Summer peak headroom (kW)",
         "config_path": ["npa", "peak_kw_summer_headroom"],
-        "tooltip": "Maximum electrical demand of heat pump during peak operation"
+        "tooltip": "Peak headroom in summer for the grid feeding these household"
     },
     "peak_kw_winter_headroom": {
         "label": "Winter peak headroom (kW)",
         "config_path": ["npa", "peak_kw_winter_headroom"],
-        "tooltip": "Maximum electrical demand of heat pump during peak operation"
+        "tooltip": "Peak headroom in winter for the grid feeding these household"
     }
 }
 
@@ -78,7 +83,7 @@ ELECTRIC_INPUTS = {
     "electric_default_depreciation_lifetime": {
         "label": "Electric default depreciation lifetime",
         "config_path": ["electric", "default_depreciation_lifetime"],
-        "tooltip": "Number of years over which electric utility assets are depreciated (exlcuding NPAs)"
+        "tooltip": "Default number of years over which electric utility assets are depreciated (exlcuding NPAs). Used to estimate depreciation for synthetic initial capex projects the would result in the initial ratebase."
     },
     "electric_maintenance_cost_pct": {
         "label": "Electric maintenance cost (%)",
@@ -88,7 +93,7 @@ ELECTRIC_INPUTS = {
     "electricity_generation_cost_per_kwh_init": {
         "label": "Electricity generation cost per kWh",
         "config_path": ["electric", "electricity_generation_cost_per_kwh_init"],
-        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year"
+        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year. This cost will grow annually by the cost inflation rate."
     },
     "electric_ratebase_init": {
         "label": "Electric ratebase",
@@ -96,19 +101,19 @@ ELECTRIC_INPUTS = {
         "tooltip": "Initial value of electric utility's ratebase (total assets)"
     },
     "electric_ror": {
-        "label": "Rate on return (%)",
+        "label": "Rate of return (%)",
         "config_path": ["electric", "ror"],
-        "tooltip": "Return on capital rate for electric utility investments"
+        "tooltip": "Total rate of return, which is a combination of return on capital and return on debt for electric utility investments (after taxes)"
     },
     "electric_fixed_overhead_costs": {
         "label": "Electric fixed overhead costs",
-        "config_path": ["electric", "electric_fixed_overhead_costs"],
+        "config_path": ["web_params", "electric_fixed_overhead_costs"],
         "tooltip": "Fixed annual overhead costs for electric utility"
     },
-    "user_bill_fixed_cost_pct": {
-        "label": "User bill fixed cost (%)",
-        "config_path": ["electric", "user_bill_fixed_cost_pct"],
-        "tooltip": "Percentage of revenue requirement allocated as fixed costs on customer bills"
+    "electric_user_bill_fixed_charge": {
+        "label": "Customer bill annual fixed charge ($)",
+        "config_path": ["electric", "user_bill_fixed_charge"],
+        "tooltip": "Annual fixed charge per customer ($)"
     },
     "grid_upgrade_depreciation_lifetime": {
         "label": "Grid upgrade depreciation lifetime",
@@ -123,17 +128,17 @@ ELECTRIC_INPUTS = {
     "aircon_peak_kw": {
         "label": "Aircon peak kW",
         "config_path": ["electric", "aircon_peak_kw"],
-        "tooltip": "Peak energy consumption of a household airconditioning unit"
+        "tooltip": "Peak energy consumption of a household's new airconditioning unit. Used to estimate additional summerelectric demand for converters without AC prior to NPA."
     },
     "hp_peak_kw": {        
-        "label": "HP peak kW",
+        "label": "Heat pump peak kW",
         "config_path": ["electric", "hp_peak_kw"],
-        "tooltip": "Maximum electrical demand of heat pump during peak operation"
+        "tooltip": "Maximum electrical demand of new heat pump during peak operation"
     },
     "distribution_cost_per_peak_kw_increase_init": {
         "label": "Distribution cost per peak kW increase",
         "config_path": ["electric", "distribution_cost_per_peak_kw_increase_init"],
-        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand"
+        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand. This costs will grow annually by the cost inflation rate."
     }
 }
 
@@ -149,19 +154,19 @@ GAS_INPUTS = {
         "tooltip": "Initial value of gas utility's ratebase (total assets)"
     },
     "gas_ror": {
-        "label": "Rate on return (%)",
+        "label": "Rate of return (%)",
         "config_path": ["gas", "ror"],
-        "tooltip": "Return on capital rate for gas utility investments"
+        "tooltip": "Total rate of return, which is a combination of return on capital and return on debt for gas utility investments (after taxes)"
     },
     "gas_fixed_overhead_costs": {
         "label": "Gas fixed overhead costs",
-        "config_path": ["gas", "gas_fixed_overhead_costs"],
-        "tooltip": "Fixed annual overhead costs for gas utility"
+        "config_path": ["web_params", "gas_fixed_overhead_costs"],
+        "tooltip": "Fixed annual overhead costs for gas utility. These costs will grow annually by the cost inflation rate."
     },
     "gas_bau_lpp_costs_per_year": {
         "label": "Gas BAU pipeline replacement costs per year",
-        "config_path": ["gas", "gas_bau_lpp_costs_per_year"],
-        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU)"
+        "config_path": ["web_params", "gas_bau_lpp_costs_per_year"],
+        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU). These costs will grow annually by the cost inflation rate."
     },
     "baseline_non_lpp_ratebase_growth": {
         "label": "Baseline non-LPP ratebase growth",
@@ -173,15 +178,25 @@ GAS_INPUTS = {
         "config_path": ["gas", "non_lpp_depreciation_lifetime"],
         "tooltip": "Depreciation lifetime for non-pipeline gas utility assets"
     },
+    "gas_user_bill_fixed_charge": {
+        "label": "Customer bill annual fixed charge ($)",
+        "config_path": ["gas", "user_bill_fixed_charge"],
+        "tooltip": "Annual fixed charge per customer ($)"
+    },
     "gas_generation_cost_per_therm_init": {
         "label": "Gas generation cost per therm",
         "config_path": ["gas", "gas_generation_cost_per_therm_init"],
-        "tooltip": "Cost per therm of natural gas in the initial year"
+        "tooltip": "Cost per therm of natural gas in the initial year. These costs will grow annually by the cost inflation rate."
     },
     "per_user_heating_need_therms": {
         "label": "Per user heating need (therms)",
         "config_path": ["gas", "per_user_heating_need_therms"],
         "tooltip": "Average annual heating demand per customer in therms"
+    },
+    "per_user_water_heating_need_therms": {
+        "label": "Per user water heating need (therms)",
+        "config_path": ["gas", "per_user_water_heating_need_therms"],
+        "tooltip": "Average annual water heating demand per customer in therms"
     }
 }
 
@@ -189,12 +204,17 @@ FINANCIAL_INPUTS = {
     "cost_inflation_rate": {
         "label": "Cost inflation rate (%)",
         "config_path": ["shared", "cost_inflation_rate"],
-        "tooltip": "Annual inflation rate applied to costs and expenses"
+        "tooltip": "Annual growth rate applied to costs and expenses"
+    },
+    "construction_inflation_rate": {
+        "label": "Construction inflation rate (%)",
+        "config_path": ["shared", "construction_inflation_rate"],
+        "tooltip": "Annual growth rate applied to construction costs"
     },
     "discount_rate": {
-        "label": "Discount rate (%)",
+        "label": "Inflation adjustment rate (%)",
         "config_path": ["shared", "discount_rate"],
-        "tooltip": "Discount rate used for present value calculations"
+        "tooltip": "Rate at which future costs and expenses are discounted to present results in today's dollars"
     }
 }
 
