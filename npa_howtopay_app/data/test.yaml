@@ -35,23 +35,29 @@ electric:
   ror: 0.08 # electric utility return on capital
 
 
+
 shared:
   cost_inflation_rate: 0.01 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
-  construction_inflation_rate: 0.01 # rate at which construction costs grow from init value; applies to non-lpp and grid upgrade capex projects
-  discount_rate: 0.03 # discount rate for converting future revenue requirements and bills into today's dollars
+  construction_inflation_rate: 0.01 # rate at which construction expenses grow from init value; applies to non-lpp and grid upgrade capex projects
+  real_dollar_discount_rate: 0.03 #  # Converts nominal to real dollars. discount rate for converting future revenue requirements and bills into today's dollars
+  npv_discount_rate: 0.05 # Calculates NPV of investments. real discount rate for calculating net present value of capex projects (used for performance incentive scenario)
+  performance_incentive_pct: 0.3 # percentage of savings (avoided LPP spending) on which gas utility receives a performance incentive (used for performance incentive scenario)
+  incentive_payback_period: 10 # number of years to pay incentives (used for performance incentive scenario)
   npa_install_costs_init: 20.0e3 # cost of installing one npa per household, in initial year of model
-  npa_lifetime: 15.0 # average lifetime of an installed npa
+  npa_lifetime: 15 # average lifetime of an installed npa
   start_year: 2025 # start year of model
   end_year: 2050  # last year of the analysis period
 
 npa:
   pipe_value_per_user: 30.0e3
-  pipeline_decomm_cost_per_user: 0
+  pipeline_decomm_cost_per_user: 0.0
   npa_projects_per_year: 20
   num_converts_per_project: 500
-  peak_kw_summer_headroom: 1500
-  peak_kw_winter_headroom: 2000
+  peak_kw_summer_headroom: 1500.0
+  peak_kw_winter_headroom: 2000.0
   aircon_percent_adoption_pre_npa: 0.50  # percentage of households that already have air conditioning before NPA
+  npa_year_start: 2025 # year NPA projects start
+  npa_year_end: 2050 # year NPA projects end
 
 web_params:
   electric_fixed_overhead_costs: 400.0e6  # fixed annual overhead costs for electric utility
