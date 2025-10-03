@@ -61,4 +61,4 @@ web_params:
   electric_fixed_overhead_costs: 400.0e6  # fixed annual overhead costs for electric utility
   gas_fixed_overhead_costs: 500.0e6  # fixed annual overhead costs for gas utility
   gas_bau_lpp_costs_per_year: 320e6  # gas pipeline replacement costs per year without any NPA projects (BAU)
-  scattershot_electrification_users_per_year: 0
+  scattershot_electrification_users_per_year: 5
