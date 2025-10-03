@@ -13,6 +13,7 @@ switchbox_colors = {
     'electric_capex': '#023047',     # sb-midnight
     'taxpayer': '#FC9706',  # sb-carrot
     'bau': '#FFC729', # sb-saffron
+    'performance_incentive': '#000000',
 }
 
 line_styles = {
@@ -22,6 +23,7 @@ line_styles = {
     'electric_capex': 'solid',
     'taxpayer': 'solid',
     'bau': 'solid',
+    'performance_incentive': 'solid',
 }
 
 scenario_labels = {
@@ -31,6 +33,7 @@ scenario_labels = {
     'electric_capex': 'Electric Capex',
     'taxpayer': 'Taxpayer',
     'bau': 'BAU',
+    'performance_incentive': 'Performance Incentive',
 }
 
 def detect_magnitude_and_format(data_values: pl.Series) -> Tuple[str, str, float]:
