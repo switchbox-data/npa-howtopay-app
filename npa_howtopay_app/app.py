@@ -227,10 +227,10 @@ def server(input, output, session):
         web_params = {
             "npa_num_projects": input.npa_projects_per_year(),
             "num_converts": input.num_converts_per_project(),
-            "pipe_value_per_user": input.pipe_value_per_user(),
-            "pipe_decomm_cost_per_user": 0,
-            "peak_kw_winter_headroom": input.peak_kw_winter_headroom(),
-            "peak_kw_summer_headroom": input.peak_kw_summer_headroom(),
+            "pipe_value_per_user": float(input.pipe_value_per_user()),
+            "pipe_decomm_cost_per_user": 0.0,
+            "peak_kw_winter_headroom": float(input.peak_kw_winter_headroom()),
+            "peak_kw_summer_headroom": float(input.peak_kw_summer_headroom()),
             "aircon_percent_adoption_pre_npa": input.aircon_percent_adoption_pre_npa(),
             "scattershot_electrification_users_per_year": input.scattershot_electrification_users_per_year(),
             "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
@@ -239,8 +239,6 @@ def server(input, output, session):
             "is_scattershot": False,
         }
 
-        print("web_params:", web_params)
-        print("=== DEBUG TEST - CAN YOU SEE THIS? ===")
 
         return web_params
     
@@ -329,7 +327,7 @@ def server(input, output, session):
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
         ts_params = create_ts_inputs()
-        results_all = nhp.model.run_scenarios(scenario_runs, input_params, ts_params)
+        results_all = nhp.model.run_all_scenarios(scenario_runs, input_params, ts_params)
         
         return results_all
 
