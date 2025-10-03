@@ -150,7 +150,6 @@ ui.page_sidebar(
     ),
     ui.card(
       ui.card_header("Average Household Delivery Bills"),
-      # output_widget("changes_to_hh_delivery_charges_chart"),
       ui.h6("Nonconverts"),
       ui.output_text("nonconverts_bill_per_user_chart_description"),
       output_widget("nonconverts_bill_per_user_chart"),
@@ -371,14 +370,6 @@ def server(input, output, session):
 
 
  # PLOTTING FUNCTIONS  
-
-
-    @render_plotly
-    def changes_to_hh_delivery_charges_chart():
-        df = prepare_data_grid()
-        req(not df.is_empty())  # Check that DataFrame is not empty
-        return plot_grid(df)
-
 
     @render_plotly
     def utility_revenue_reqs_chart():
