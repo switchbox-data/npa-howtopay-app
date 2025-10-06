@@ -488,3 +488,82 @@ body {
   box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3) !important;
   text-decoration: none !important;
 }
+
+/* Replace the existing slider CSS with this more comprehensive version */
+#npa_year_range .irs-bar,
+#npa_year_range .irs-line,
+#npa_year_range .irs-range {
+  background: var(--sb-midnight) !important;
+}
+
+#npa_year_range .irs-handle,
+#npa_year_range .irs-handle-single,
+#npa_year_range .irs-handle-from,
+#npa_year_range .irs-handle-to {
+  background: var(--sb-midnight) !important;
+  border: 2px solid var(--sb-white) !important;
+}
+
+#npa_year_range .irs-handle:hover,
+#npa_year_range .irs-handle-single:hover,
+#npa_year_range .irs-handle-from:hover,
+#npa_year_range .irs-handle-to:hover {
+  background: var(--sb-carrot) !important;
+}
+
+#npa_year_range .irs-from,
+#npa_year_range .irs-to,
+#npa_year_range .irs-single,
+#npa_year_range .irs-min,
+#npa_year_range .irs-max {
+  background: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+}
+
+/* Alternative selectors for different slider implementations */
+.npa_year_range_slider .irs-bar,
+.npa_year_range_slider .irs-handle {
+  background: var(--sb-midnight) !important;
+}
+
+/* Generic slider styling */
+.irs-bar {
+  background: var(--sb-midnight) !important;
+}
+
+.irs-handle {
+  background: var(--sb-midnight) !important;
+  border: 2px solid var(--sb-white) !important;
+}
+
+/* Add this to target the text/labels specifically */
+#npa_year_range .irs-from,
+#npa_year_range .irs-to,
+#npa_year_range .irs-single,
+#npa_year_range .irs-min,
+#npa_year_range .irs-max,
+#npa_year_range .irs-handle::after,
+#npa_year_range .irs-handle::before {
+  background: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+  border: 1px solid var(--sb-white) !important;
+}
+
+/* Also try targeting the text more broadly */
+.irs-from,
+.irs-to,
+.irs-single,
+.irs-min,
+.irs-max {
+  background: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+  border: 1px solid var(--sb-white) !important;
+}
+
+/* Target any text elements within the slider */
+#npa_year_range span,
+#npa_year_range .irs-handle span {
+  background: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+}
+

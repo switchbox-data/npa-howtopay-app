@@ -37,6 +37,16 @@ PIPELINE_INPUTS = {
         "config_path": ["npa", "num_converts_per_project"],
         "tooltip": "Number of household conversions included in each NPA project"
     },
+    "npa_year_start": {
+        "label": "NPA start year",
+        "config_path": ["npa", "npa_year_start"],
+        "tooltip": "Year NPA projects start. "
+    },
+    "npa_year_end": {
+        "label": "NPA end year",
+        "config_path": ["npa", "npa_year_end"],
+        "tooltip": "Year NPA projects end. After the year, the model assumes no more NPA projects are completed."
+    },
     "npa_lifetime": {
         "label": "NPA lifetime (years)",
         "config_path": ["shared", "npa_lifetime"],
