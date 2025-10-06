@@ -20,16 +20,16 @@
   },
   "files": {
     "requirements.txt": {
-      "checksum": "303e695f6450293e1e77d3a05b440f3b"
-    },
-    ".DS_Store": {
-      "checksum": "9c9a10f7a474ce8fbb03e6c5e608366d"
+      "checksum": "4e37cb89ab73cbafcfef00e9bff0938f"
     },
     ".gitignore": {
-      "checksum": "6bb62fef7b423463ca6646a552579d0d"
+      "checksum": "f8e8a00c2853cea494799089cbfcef8a"
     },
     ".python-version": {
       "checksum": "731410e21d3870d944e7d36e965fc3fa"
+    },
+    ".vscode/settings.json": {
+      "checksum": "bcb4803ceaacfc454bea2c8dbeb72560"
     },
     "LICENSE": {
       "checksum": "86d3f3a95c324c9479bd8986968f4327"
@@ -40,83 +40,56 @@
     "justfile": {
       "checksum": "f98eac09db07c4a85abd5a427a7064f8"
     },
-    "npa_howtopay_app/.DS_Store": {
-      "checksum": "e3a0aac93d846b476f1d01d5f604cdb7"
-    },
     "npa_howtopay_app/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
-    "npa_howtopay_app/__pycache__/__init__.cpython-311.pyc": {
-      "checksum": "33e5ea190c4e4c20fbfbb4e1f7b222af"
-    },
-    "npa_howtopay_app/__pycache__/__init__.cpython-313.pyc": {
-      "checksum": "ece006f5fed30a7b46251a758386edb6"
-    },
-    "npa_howtopay_app/__pycache__/app.cpython-311.pyc": {
-      "checksum": "0a6bf9c83f108b98c05c0326576ad6f8"
-    },
     "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
-      "checksum": "5b464e4fe6f14e7597eca130572b4404"
+      "checksum": "b321adbc5a48886d6d4250acef0b241f"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "d78b1f8d350b0515e3df4fd4d425230a"
-    },
-    "npa_howtopay_app/data/.DS_Store": {
-      "checksum": "194577a7e20bdcc7afbb718f502c134c"
+      "checksum": "e961618a1fbd8b2553360630b1f62677"
     },
     "npa_howtopay_app/data/test.yaml": {
-      "checksum": "9c1259b51106406ca6ff57208af3d055"
+      "checksum": "4c596efdd3f61fae524972161e92df4a"
     },
     "npa_howtopay_app/data/test_kiki.yaml": {
-      "checksum": "9ca27e05df50fdb6952362f26994e3ea"
+      "checksum": "ce4e6704fdbc52e6e0259a9f3fa04675"
     },
     "npa_howtopay_app/modules/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
-    "npa_howtopay_app/modules/__pycache__/__init__.cpython-311.pyc": {
-      "checksum": "5edbad4e172a1581c4019f77cde39230"
-    },
     "npa_howtopay_app/modules/__pycache__/__init__.cpython-313.pyc": {
-      "checksum": "64cf68fea8350bef100f9f8f4d73c304"
-    },
-    "npa_howtopay_app/modules/__pycache__/config.cpython-311.pyc": {
-      "checksum": "b57eb3316f96d6467b507fac0b217a9a"
+      "checksum": "307549c41498e9f9cedc0b86797c8d7a"
     },
     "npa_howtopay_app/modules/__pycache__/config.cpython-313.pyc": {
-      "checksum": "6d6af5c150497ae383c0845c627362ba"
-    },
-    "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-311.pyc": {
-      "checksum": "b76caa03c98e8466661c642affee0f11"
+      "checksum": "8b03b20508395147adae42d1bf57a646"
     },
     "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-313.pyc": {
-      "checksum": "3da72bbfd5ebf31ca0f6828dd1520261"
-    },
-    "npa_howtopay_app/modules/__pycache__/plotting.cpython-311.pyc": {
-      "checksum": "42926a5b9604f2020dc6405d9558ddf1"
+      "checksum": "a1c31568c99596b37e8ccbb9d63baba9"
     },
     "npa_howtopay_app/modules/__pycache__/plotting.cpython-313.pyc": {
-      "checksum": "6135f3f96711a2ab8f96f65605022055"
+      "checksum": "7cf537001dbb90c866c2b8c1ff181c51"
     },
     "npa_howtopay_app/modules/config.py": {
       "checksum": "4df016fb54ae3864ef44d3e093c23ab4"
     },
     "npa_howtopay_app/modules/input_mappings.py": {
-      "checksum": "9f49bf0917771b132873bd4f938457f2"
+      "checksum": "99f4910f583591a9b32e38bf7856086b"
     },
     "npa_howtopay_app/modules/plotting.py": {
-      "checksum": "5830a8e6aa762b3a9617e975ade19377"
+      "checksum": "dad50d8d3d486dfb2201819f6e407e80"
     },
     "npa_howtopay_app/rsconnect-python/npa_howtopay_app.json": {
       "checksum": "ef0bf409a060e5b2cdfc4d09ec11cfff"
     },
     "npa_howtopay_app/styles.css": {
-      "checksum": "cfa5126bf0ccb7c41fb8db1c365b00d0"
+      "checksum": "41506f5c7ecfe591b59d0968a8bde5f3"
     },
     "pyproject.toml": {
-      "checksum": "9bc86dab8ebf19461aeacbbe31083284"
+      "checksum": "b2e714917a45416af71ad2b0c04c3eba"
     },
     "uv.lock": {
-      "checksum": "30ed984c827f80f1a1bf5d820722c840"
+      "checksum": "1757358e02c3d0dec5259f006d72c248"
     }
   }
 }

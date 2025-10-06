@@ -13,7 +13,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric, plot_grid, plot_total_bills
+from modules.plotting import plot_utility_metric,  plot_total_bills
 from npa_howtopay.params import COMPARE_COLS
 
 css_file = Path(__file__).parent / "styles.css"
@@ -83,6 +83,7 @@ ui.page_sidebar(
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
+        create_input_with_tooltip("scattershot_electrification_users_per_year"),
         create_input_with_tooltip("electric_user_bill_fixed_charge"),
         create_input_with_tooltip("electric_ratebase_init"),
         create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
@@ -112,7 +113,13 @@ ui.page_sidebar(
         # Financial inputs - you can reorder these as needed
         create_input_with_tooltip("cost_inflation_rate"),
         create_input_with_tooltip("construction_inflation_rate"),
-        create_input_with_tooltip("discount_rate"),
+        create_input_with_tooltip("real_dollar_discount_rate"),
+
+      ),
+      ui.nav_panel("Performance Incentive", ui.h4("Performance Incentive"),
+        create_input_with_tooltip("npv_discount_rate"),
+        create_input_with_tooltip("performance_incentive_pct"),
+        create_input_with_tooltip("incentive_payback_period"),
       )
       ),
     style="overflow-y: auto; max-height: 65vh;"  # Move scroll styling here
@@ -150,7 +157,6 @@ ui.page_sidebar(
     ),
     ui.card(
       ui.card_header("Average Household Delivery Bills"),
-      # output_widget("changes_to_hh_delivery_charges_chart"),
       ui.h6("Nonconverts"),
       ui.output_text("nonconverts_bill_per_user_chart_description"),
       output_widget("nonconverts_bill_per_user_chart"),
@@ -221,17 +227,18 @@ def server(input, output, session):
         web_params = {
             "npa_num_projects": input.npa_projects_per_year(),
             "num_converts": input.num_converts_per_project(),
-            "pipe_value_per_user": input.pipe_value_per_user(),
-            "pipe_decomm_cost_per_user": 0,
-            "peak_kw_winter_headroom": input.peak_kw_winter_headroom(),
-            "peak_kw_summer_headroom": input.peak_kw_summer_headroom(),
+            "pipe_value_per_user": float(input.pipe_value_per_user()),
+            "pipe_decomm_cost_per_user": 0.0,
+            "peak_kw_winter_headroom": float(input.peak_kw_winter_headroom()),
+            "peak_kw_summer_headroom": float(input.peak_kw_summer_headroom()),
             "aircon_percent_adoption_pre_npa": input.aircon_percent_adoption_pre_npa(),
-            "non_npa_scattershot_electrifiction_users_per_year": 0,
+            "scattershot_electrification_users_per_year": input.scattershot_electrification_users_per_year(),
             "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
             "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
             "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
             "is_scattershot": False,
         }
+
 
         return web_params
     
@@ -281,7 +288,10 @@ def server(input, output, session):
         """Create the parameters object for the model"""
         shared_params = nhp.params.SharedParams(
           cost_inflation_rate=input.cost_inflation_rate(), 
-          discount_rate=input.discount_rate(), 
+          real_dollar_discount_rate=input.real_dollar_discount_rate(), 
+          npv_discount_rate=input.npv_discount_rate(),
+          performance_incentive_pct=input.performance_incentive_pct(),
+          incentive_payback_period=input.incentive_payback_period(),
           construction_inflation_rate=input.construction_inflation_rate(),
           npa_install_costs_init=input.npa_install_costs_init(),
           npa_lifetime=input.npa_lifetime(), 
@@ -310,14 +320,14 @@ def server(input, output, session):
         """Create the scenario parameters for the model"""
         return nhp.model.create_scenario_runs(input.start_year(), input.end_year(), ["gas", "electric"], ["capex", "opex"])
 
-   # MODEL FUNCTIONS
+    # MODEL FUNCTIONS
 
     @reactive.calc
     def run_model():
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
         ts_params = create_ts_inputs()
-        results_all, _ = nhp.model.analyze_scenarios(scenario_runs, input_params, ts_params)
+        results_all = nhp.model.run_all_scenarios(scenario_runs, input_params, ts_params)
         
         return results_all
 
@@ -337,24 +347,14 @@ def server(input, output, session):
         
         if show_absolute:
             print("Taking absolute path")
-            filtered_results = {}
-            for scenario_name, scenario_df in results_all.items():
 
-                filtered_results[scenario_name] = scenario_df.select(["year", *COMPARE_COLS])
-                print(f"Added {scenario_name} with shape {scenario_df.shape}")
-
-            print(f"filtered_results keys: {filtered_results.keys()}")
-            # Concatenate and transform to long format
-            combined_df = pl.concat(
-                [df.with_columns(pl.lit(scenario_id).alias("scenario_id")) for scenario_id, df in filtered_results.items()],
-                how="vertical",
-            )
+            combined_df = nhp.model.return_absolute_values_df(results_all)
             print("combined_df type:", type(combined_df))
             print("combined_df shape:", combined_df.shape)
             
         else:
             print("Taking delta path")
-            combined_df = nhp.model.create_delta_bau_df(results_all, COMPARE_COLS)
+            combined_df = nhp.model.create_delta_df(results_all, COMPARE_COLS)
             print("combined_df type:", type(combined_df))
             print("combined_df shape:", combined_df.shape)
         
@@ -370,15 +370,7 @@ def server(input, output, session):
         return plt_df
 
 
- # PLOTTING FUNCTIONS  
-
-
-    @render_plotly
-    def changes_to_hh_delivery_charges_chart():
-        df = prepare_data_grid()
-        req(not df.is_empty())  # Check that DataFrame is not empty
-        return plot_grid(df)
-
+    # PLOTTING FUNCTIONS  
 
     @render_plotly
     def utility_revenue_reqs_chart():

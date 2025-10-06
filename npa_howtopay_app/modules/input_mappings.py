@@ -75,6 +75,11 @@ ELECTRIC_INPUTS = {
         "config_path": ["electric", "num_users_init"],
         "tooltip": "Initial number of customers served by electric utility"
     },
+    "scattershot_electrification_users_per_year": {
+        "label": "Scattershot electrification users per year",
+        "config_path": ["web_params", "scattershot_electrification_users_per_year"],
+        "tooltip": "Number of customers who electrified each year, independent of NPAs. This increases overall electric demand and reduces the number of gas customers but has no impact on NPAs or grid upgrades. It is held constant in the BAU scenario."
+    },
     "baseline_non_npa_ratebase_growth": {
         "label": "Baseline non-NPA ratebase growth",
         "config_path": ["electric", "baseline_non_npa_ratebase_growth"],
@@ -204,17 +209,32 @@ FINANCIAL_INPUTS = {
     "cost_inflation_rate": {
         "label": "Cost inflation rate (%)",
         "config_path": ["shared", "cost_inflation_rate"],
-        "tooltip": "Annual growth rate applied to costs and expenses"
+        "tooltip": "Nominal annual growth rate applied to costs and expenses"
     },
     "construction_inflation_rate": {
         "label": "Construction inflation rate (%)",
         "config_path": ["shared", "construction_inflation_rate"],
-        "tooltip": "Annual growth rate applied to construction costs"
+        "tooltip": "Nominal annual growth rate applied to construction costs"
     },
-    "discount_rate": {
+    "real_dollar_discount_rate": {
         "label": "Inflation adjustment rate (%)",
-        "config_path": ["shared", "discount_rate"],
+        "config_path": ["shared", "real_dollar_discount_rate"],
         "tooltip": "Rate at which future costs and expenses are discounted to present results in today's dollars"
+    },
+    "npv_discount_rate": {
+        "label": "NPV discount rate (%)",
+        "config_path": ["shared", "npv_discount_rate"],
+        "tooltip": "Real discount rate for calculating net present value of capex projects (used for performance incentive scenario)"
+    },
+    "performance_incentive_pct": {
+        "label": "Performance incentive percentage (%)",
+        "config_path": ["shared", "performance_incentive_pct"],
+        "tooltip": "Percentage of savings (avoided LPP spending) on which gas utility receives a performance incentive (used for performance incentive scenario)"
+    },
+    "incentive_payback_period": {
+        "label": "Incentive payback period (years)",
+        "config_path": ["shared", "incentive_payback_period"],
+        "tooltip": "Number of years to pay incentives (used for performance incentive scenario)"
     }
 }
 
