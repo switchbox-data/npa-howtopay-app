@@ -13,7 +13,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric, plot_total_bills
+from modules.plotting import plot_utility_metric, plot_total_bills_bar
 from npa_howtopay.params import COMPARE_COLS
 
 css_file = Path(__file__).parent / "styles.css"
@@ -27,7 +27,7 @@ def create_input_with_tooltip(input_id):
     """Create numeric input with tooltip using input mappings"""
     input_data = ALL_INPUT_MAPPINGS[input_id]
     return ui.tooltip(
-        ui.input_numeric(input_id, input_data["label"], value=get_config_value(config, input_data["config_path"])),
+        ui.input_numeric(input_id, input_data["label"], value=get_config_value(config, input_data["config_path"]), update_on="blur"),
         input_data["tooltip"]
     )
 
@@ -200,12 +200,20 @@ ui.page_sidebar(
     ui.card(
       ui.card_header("Nonconverts"),
         ui.output_ui("nonconverts_bill_per_user_chart_description"),
-        output_widget("nonconverts_bill_per_user_chart"),
+        ui.input_select("show_year", "Show bills in year:", 
+        choices={}, 
+        selected=None),
+        ui.layout_columns(
+          output_widget("total_bills_chart_nonconverts"),
+          output_widget("nonconverts_bill_per_user_chart"),
     #     ui.input_select("show_year", "Show bills in year:", 
     #         choices={}, 
     #         selected=None),
     #   ui.output_text("total_bills_chart_description"),
-    #   output_widget("total_bills_chart"),
+    
+
+        col_widths={"sm": (4,8)}
+        ),
     ),
 
     ui.card(
@@ -535,7 +543,8 @@ def server(input, output, session):
             column="nonconverts_bill_per_user",
             title="",
             y_label_unit="$",   
-            show_absolute=input.show_absolute()
+            show_absolute=input.show_absolute(),
+            show_year=input.show_year()
         )
     @render.ui
     def nonconverts_bill_per_user_chart_description():
@@ -554,7 +563,8 @@ def server(input, output, session):
             column="converts_bill_per_user",
             title="",
             y_label_unit="$",   
-            show_absolute=input.show_absolute()
+            show_absolute=input.show_absolute(),
+            show_year=2030
         )
     @render.ui
     def converts_bill_per_user_chart_description():
@@ -569,8 +579,9 @@ def server(input, output, session):
         req(not df.is_empty())  # Check that DataFrame is not empty
         req(input.show_year() is not None)  # Check that year selection is not None
         
-        return plot_total_bills(
-            results_df=df.filter(pl.col("year") == int(input.show_year())),            
+        return plot_total_bills_bar(
+            results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="nonconverts",           
+            show_absolute=input.show_absolute()
         )
 
     @render.text
@@ -586,8 +597,8 @@ def server(input, output, session):
         req(not df.is_empty())  # Check that DataFrame is not empty
         req(input.show_year() is not None)  # Check that year selection is not None
         
-        return plot_total_bills(
-            results_df=df.filter(pl.col("year") == int(input.show_year())),            
+        return plot_total_bills_bar(
+            results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="converts",           
         )
 
     @render.text
