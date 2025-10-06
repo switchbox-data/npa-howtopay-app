@@ -203,7 +203,7 @@ ui.page_sidebar(
       
       ui.layout_columns(
         ui.h6("Combined Annual Delivery Bills (Gas + Electric):"),
-        ui.input_select("show_year", "Show bills in year:", 
+        ui.input_select("show_year_nonconverts", "Show bills in year:", 
         choices={}, 
         selected=None,
         ),
@@ -282,6 +282,7 @@ def server(input, output, session):
 
         
     # Update year dropdown choices when start_year, end_year, or config changes
+    # Update year dropdown choices when start_year, end_year, or config changes
     @reactive.effect
     def update_year_choices():
         # This will trigger when current_config() changes
@@ -290,22 +291,40 @@ def server(input, output, session):
         end = input.end_year()
         if start and end:
             choices = {year: year for year in range(start, end + 1)}
-            # Set default to the current selection if valid, otherwise use start year
-            current_selection = input.show_year()
-            if current_selection is not None:
-                # Convert to int in case it's a string
+            
+            # Handle nonconverts dropdown independently
+            current_selection_nonconverts = input.show_year_nonconverts()
+            if current_selection_nonconverts is not None:
                 try:
-                    current_year = int(current_selection)
+                    current_year = int(current_selection_nonconverts)
                     if start <= current_year <= end:
-                        selected = current_year
+                        selected_nonconverts = current_year
                     else:
-                        selected = end
+                        selected_nonconverts = end
                 except (ValueError, TypeError):
-                    selected = end
+                    selected_nonconverts = end
             else:
-                selected = end
-            ui.update_select("show_year_nonconverts", choices=choices, selected=selected)
-            ui.update_select("show_year_converts", choices=choices, selected=selected)
+                selected_nonconverts = end
+            
+            # Handle converts dropdown independently
+            current_selection_converts = input.show_year_converts()
+            if current_selection_converts is not None:
+                try:
+                    current_year = int(current_selection_converts)
+                    if start <= current_year <= end:
+                        selected_converts = current_year
+                    else:
+                        selected_converts = end
+                except (ValueError, TypeError):
+                    selected_converts = end
+            else:
+                selected_converts = end
+            
+            # Update both dropdowns with same choices but independent selections
+            ui.update_select("show_year_nonconverts", choices=choices, selected=selected_nonconverts)
+            ui.update_select("show_year_converts", choices=choices, selected=selected_converts)
+
+    
     
     @render.ui
     def npa_year_range_slider():
@@ -572,7 +591,7 @@ def server(input, output, session):
             y_label_unit="$",   
             y_label_title="Nonconverts annual delivery bill",
             show_absolute=input.show_absolute(),
-            show_year=input.show_year()
+            show_year=input.show_year_nonconverts()
         )
     @render.ui
     def nonconverts_bill_per_user_chart_description():
@@ -606,25 +625,25 @@ def server(input, output, session):
     def total_bills_chart_nonconverts_bar():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
-        req(input.show_year() is not None)  # Check that year selection is not None
+        req(input.show_year_nonconverts() is not None)  # Check that year selection is not None
         
         return plot_total_bills_bar(
-            results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="nonconverts",           
+            results_df=df.filter(pl.col("year") == int(input.show_year_nonconverts())), converts_nonconverts="nonconverts",           
             show_absolute=input.show_absolute(),
-            y_label_title=f"Combined annual delivery bills in {input.show_year()}"
+            y_label_title=f"Combined annual delivery bills in {input.show_year_nonconverts()}"
         )
 
     @render_plotly
     def total_bills_chart_nonconverts():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
-        # req(input.show_year() is not None)  # Check that year selection is not None
+        req(input.show_year_nonconverts() is not None)  # Check that year selection is not None
         
 
         return plot_total_bills_ts(
             df,converts_nonconverts="nonconverts",            
             y_label_title="Combined annual delivery bills",
-            show_year=input.show_year()
+            show_year=input.show_year_nonconverts()
 
         )
 
@@ -634,15 +653,29 @@ def server(input, output, session):
             return "Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
         else:
           return "Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
-    
+        
+    @render_plotly
+    def total_bills_chart_converts_bar():
+        df = return_delta_or_absolute_df()
+        req(not df.is_empty())  # Check that DataFrame is not empty
+        req(input.show_year_converts() is not None)  # Check that year selection is not None
+        
+        return plot_total_bills_bar(
+            results_df=df.filter(pl.col("year") == int(input.show_year_converts())), converts_nonconverts="converts",           
+            show_absolute=input.show_absolute(),
+            y_label_title=f"Combined annual delivery bills in {input.show_year_converts()}"
+        )
     @render_plotly
     def total_bills_chart_converts():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
-        req(input.show_year() is not None)  # Check that year selection is not None
+        req(input.show_year_converts() is not None)  # Check that year selection is not None
         
-        return plot_total_bills_bar(
-            results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="converts",           
+
+        return plot_total_bills_ts(
+            df,converts_nonconverts="converts",            
+            y_label_title="Combined annual delivery bills",
+            show_year=input.show_year_converts()
         )
 
     @render.text
