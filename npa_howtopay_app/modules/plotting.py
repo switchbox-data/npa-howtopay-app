@@ -106,6 +106,7 @@ def plot_utility_metric(
     column: str, 
     title: str, 
     y_label_unit: str = "$", 
+    y_label_title: str = "",
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
     show_absolute: bool = False,
@@ -141,7 +142,7 @@ def plot_utility_metric(
         tick_format = '.2f'
         suffix = "%"
         plot_column = f"{column}_scaled"
-        y_label_with_suffix = 'Percent of revenue req.'
+        y_label_with_suffix = '%'
     else:
         # For non-dollar units, use original formatting
         tick_format = '.3f' if "/" in y_label_unit else ',.0f'
@@ -150,7 +151,11 @@ def plot_utility_metric(
         y_label_with_suffix = y_label_unit
 
     # Determine y-axis label based on show_absolute parameter
-    y_label = f"{y_label_with_suffix} (absolute value)" if show_absolute else f"{y_label_with_suffix} (delta from BAU )"
+    if show_absolute:
+        y_label = f"{y_label_title} ({y_label_with_suffix})"
+    else:
+        # Use delta symbol (Δ) for delta values
+        y_label = f"Δ {y_label_title} ({y_label_with_suffix})"
     
     print("Creating plotly figure...")
     # Create figure with facets
@@ -160,8 +165,8 @@ def plot_utility_metric(
         y=plot_column,
         color="scenario_id",
         line_dash="scenario_id",
-        facet_row="utility_type",
-        facet_row_spacing=0.09,
+        facet_col="utility_type",
+        facet_col_spacing=0.09,
         color_discrete_map=scenario_colors,
         line_dash_map=scenario_line_styles,
         title="",
@@ -175,26 +180,26 @@ def plot_utility_metric(
     print(f"Figure created successfull - {y_label}")
     # INSERT_YOUR_CODE
     # Add a gray vertical line at show_year if plotting converts or nonconverts bill per user
-    if column in ("converts_bill_per_user", "nonconverts_bill_per_user") and show_year is not None:
-        try:
-            show_year_val = int(show_year)
-            fig.add_vline(
-                x=show_year_val,
-                line_dash="dash",
-                line_color="gray",
-                line_width=2,
-                annotation_text="",
-                annotation_position="top"
-            )
-        except Exception:
-            pass
+    # if column in ("converts_bill_per_user", "nonconverts_bill_per_user") and show_year is not None:
+    #     try:
+    #         show_year_val = int(show_year)
+    #         fig.add_vline(
+    #             x=show_year_val,
+    #             line_dash="dash",
+    #             line_color="gray",
+    #             line_width=2,
+    #             annotation_text="",
+    #             annotation_position="top"
+    #         )
+    #     except Exception:
+    #         pass
     # Remove the "=" prefix from facet labels and make them bold, capitalize
     fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1].upper()}</b>"))
     
     # Remove y-axis titles from individual facets
     # fig.for_each_yaxis(lambda y: y.update(title=''))
     # Remove y-axis title from second facet
-    fig.update_yaxes(title=None, row=2)
+    fig.update_yaxes(title=None, col=2)
     # Align y-axis title to the right
 
     # # Add main y-axis label
@@ -248,6 +253,7 @@ def plot_total_bills_bar(
     results_df: pl.DataFrame, 
     converts_nonconverts: str ,
     show_absolute: bool,
+    y_label_title: str = "",
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
      
@@ -288,13 +294,19 @@ def plot_total_bills_bar(
         (pl.col("total_bill") / scale_factor).alias("total_bill_scaled")
     )
     
-    # Update y-axis label with suffix
-    # y_label_with_suffix = f"${suffix}" if suffix else "$"
-    if converts_nonconverts == "nonconverts":
-        y_label = f"Combined Annual Delivery Bills (absolute value)" if show_absolute else f"Combined Annual Delivery Bills\n(Delta from BAU)"
-    elif converts_nonconverts == "converts":
-        y_label = f"Combined Annual Delivery Bills (absolute value)" if show_absolute else f"Change in combined annual delivery bills (after electrification)"
-    
+    # # Update y-axis label with suffix
+    # # y_label_with_suffix = f"${suffix}" if suffix else "$"
+    # if converts_nonconverts == "nonconverts":
+    #     y_label = f"Combined Annual Delivery Bills (absolute value)" if show_absolute else f"Combined Annual Delivery Bills\n(Delta from BAU)"
+    # elif converts_nonconverts == "converts":
+    #     y_label = f"Combined Annual Delivery Bills (absolute value)" if show_absolute else f"Change in combined annual delivery bills (after electrification)"
+        # Determine y-axis label based on show_absolute parameter
+    if show_absolute:
+        y_label = f"{y_label_title} ($)"
+    else:
+        # Use delta symbol (Δ) for delta values
+        y_label = f"Δ {y_label_title} ($)"
+
     print("Creating plotly figure...")
     # Create figure with facets
     fig = px.bar(
@@ -309,7 +321,7 @@ def plot_total_bills_bar(
             "total_bill": y_label,
             "year": "Year",
             "user_type": "",
-            "scenario_id": "Scenario"
+            "scenario_id": ""
         }
     )
     print("Figure created successfully")
@@ -360,6 +372,8 @@ def plot_total_bills_bar(
 def plot_total_bills_ts(
     delta_bau_df: pl.DataFrame, 
     converts_nonconverts: str,
+    y_label_title: str = "",
+    show_year: int = None,
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
     show_absolute: bool = False
@@ -400,9 +414,11 @@ def plot_total_bills_ts(
         (pl.col("total_bill") / scale_factor).alias("total_bill_scaled")
     )
     
-    # Update y-axis label with suffix
-    y_label_with_suffix = f"${suffix}" if suffix else "$"
-    y_label = f"Absolute Value ({y_label_with_suffix})" if show_absolute else f"Combined Annual Delivery Bills (Delta from BAU)"
+    if show_absolute:
+        y_label = f"{y_label_title} ($)"
+    else:
+        # Use delta symbol (Δ) for delta values
+        y_label = f"Δ {y_label_title} ($)"
     
     print("Creating plotly figure...")
     # Create figure with facets
@@ -441,7 +457,15 @@ def plot_total_bills_ts(
     #     xref="paper",
     #     yref="paper"
     # )
-    
+    show_year_val = int(show_year)
+    fig.add_vline(
+        x=show_year_val,
+        line_dash="dash",
+        line_color="gray",
+        line_width=2,
+        annotation_text="",
+        annotation_position="top"
+    )
     # Update legend labels to use scenario_labels
     fig.for_each_trace(lambda t: t.update(name=scenario_labels.get(t.name, t.name)))
     

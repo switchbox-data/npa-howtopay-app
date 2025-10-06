@@ -44,10 +44,10 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
-      "checksum": "af44ab5d18921d72178e0d1b517ded6d"
+      "checksum": "523c845cba995a909bfd564118785347"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "9a8ab455d0f23f123c1e5911a5c0b572"
+      "checksum": "b031cc860d8d4f97d0a9db37af23a72b"
     },
     "npa_howtopay_app/data/test.yaml": {
       "checksum": "4c596efdd3f61fae524972161e92df4a"
@@ -65,10 +65,10 @@
       "checksum": "8b03b20508395147adae42d1bf57a646"
     },
     "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-313.pyc": {
-      "checksum": "c59904259f5e6a7a379b0140f1509881"
+      "checksum": "0a0b51b32e1b989a4cedef1683dbd7be"
     },
     "npa_howtopay_app/modules/__pycache__/plotting.cpython-313.pyc": {
-      "checksum": "f943006a92f1b3d59747239c5bf8c31c"
+      "checksum": "f36b083f7882ad3b8c3e752b2161ef2c"
     },
     "npa_howtopay_app/modules/config.py": {
       "checksum": "4df016fb54ae3864ef44d3e093c23ab4"
@@ -77,7 +77,7 @@
       "checksum": "9200715b4573e549b828630fba78b157"
     },
     "npa_howtopay_app/modules/plotting.py": {
-      "checksum": "60f7657dd1d76bc227a459b30ae4405c"
+      "checksum": "f2bbcf3369fd065eb31320251aaf606e"
     },
     "npa_howtopay_app/rsconnect-python/npa_howtopay_app.json": {
       "checksum": "ef0bf409a060e5b2cdfc4d09ec11cfff"

@@ -200,31 +200,49 @@ ui.page_sidebar(
     ui.card(
       ui.card_header("Nonconverts"),
       ui.output_ui("nonconverts_bill_per_user_chart_description"),
-      ui.h6("Combined Annual Delivery Bills"),
-      ui.input_select("show_year", "Show bills in year:", 
+      
+      ui.layout_columns(
+        ui.h6("Combined Annual Delivery Bills (Gas + Electric):"),
+        ui.input_select("show_year", "Show bills in year:", 
         choices={}, 
-        selected=None),
-        ui.layout_columns(
-        output_widget("total_bills_chart_nonconverts_bar"),
+        selected=None,
+        ),
+        col_widths={"sm": (8,4)}
+        ),
+      ui.layout_columns(
         output_widget("total_bills_chart_nonconverts"),
-        col_widths={"sm": (4,8)}
+        output_widget("total_bills_chart_nonconverts_bar"),
+        col_widths={"sm": (8,4)}
         ),
+        ui.h6("By Utility Type:"),
         output_widget("nonconverts_bill_per_user_chart"),
-
-    #     ui.input_select("show_year", "Show bills in year:", 
-    #         choices={}, 
-    #         selected=None),
-    #   ui.output_text("total_bills_chart_description"),
-    
-
-        
         ),
-
-    ui.card(
+        ui.card(
       ui.card_header("Converts"),
       ui.output_ui("converts_bill_per_user_chart_description"),
-      output_widget("converts_bill_per_user_chart"),
-    ),
+      
+      ui.layout_columns(
+        ui.h6("Combined Annual Delivery Bills (Gas + Electric):"),
+        ui.input_select("show_year_converts", "Show bills in year:", 
+        choices={}, 
+        selected=None,
+        ),
+        col_widths={"sm": (8,4)}
+        ),
+      ui.layout_columns(
+        output_widget("total_bills_chart_converts"),
+        output_widget("total_bills_chart_converts_bar"),
+        col_widths={"sm": (8,4)}
+        ),
+        ui.h6("By Utility Type:"),
+        output_widget("converts_bill_per_user_chart"),
+        ),
+
+    # ui.card(
+    #   ui.card_header("Converts"),
+    #   ui.output_ui("converts_bill_per_user_chart_description"),
+    #   output_widget("converts_bill_per_user_chart"),
+    # ),
 
     col_widths={"sm": (12,12,6, 6, 6, 6, 12, 12, 12)},
   ),
@@ -286,7 +304,8 @@ def server(input, output, session):
                     selected = end
             else:
                 selected = end
-            ui.update_select("show_year", choices=choices, selected=selected)
+            ui.update_select("show_year_nonconverts", choices=choices, selected=selected)
+            ui.update_select("show_year_converts", choices=choices, selected=selected)
     
     @render.ui
     def npa_year_range_slider():
@@ -469,6 +488,7 @@ def server(input, output, session):
             column="inflation_adjusted_revenue_requirement", 
             title="Utility Revenue Requirements",
             y_label_unit="$",
+            y_label_title="Utility revenue requirement",
             show_absolute=input.show_absolute()
         )
 
@@ -489,6 +509,7 @@ def server(input, output, session):
             column="variable_tariff",
             title="Volumetric Tariff",
             y_label_unit="$/unit",
+            y_label_title="Volumetric tariff",
             show_absolute=input.show_absolute()
         )
 
@@ -509,6 +530,7 @@ def server(input, output, session):
             column="ratebase",
             title="Ratebase",
             y_label_unit="$",
+            y_label_title="Ratebase",
             show_absolute=input.show_absolute()
         )
     @render.text
@@ -528,6 +550,7 @@ def server(input, output, session):
             column="return_on_ratebase_pct",
             title="",
             y_label_unit="% of revenue requirement",
+            y_label_title="Return component",
             show_absolute=input.show_absolute()
         )
     @render.text
@@ -547,6 +570,7 @@ def server(input, output, session):
             column="nonconverts_bill_per_user",
             title="",
             y_label_unit="$",   
+            y_label_title="Nonconverts annual delivery bill",
             show_absolute=input.show_absolute(),
             show_year=input.show_year()
         )
@@ -567,6 +591,7 @@ def server(input, output, session):
             column="converts_bill_per_user",
             title="",
             y_label_unit="$",   
+            y_label_title="Converts annual delivery bill",
             show_absolute=input.show_absolute(),
             show_year=2030
         )
@@ -585,7 +610,8 @@ def server(input, output, session):
         
         return plot_total_bills_bar(
             results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="nonconverts",           
-            show_absolute=input.show_absolute()   
+            show_absolute=input.show_absolute(),
+            y_label_title=f"Combined annual delivery bills in {input.show_year()}"
         )
 
     @render_plotly
@@ -597,6 +623,9 @@ def server(input, output, session):
 
         return plot_total_bills_ts(
             df,converts_nonconverts="nonconverts",            
+            y_label_title="Combined annual delivery bills",
+            show_year=input.show_year()
+
         )
 
     @render.text
