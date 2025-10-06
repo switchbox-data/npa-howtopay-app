@@ -31,6 +31,29 @@ def create_input_with_tooltip(input_id):
         input_data["tooltip"]
     )
 
+def create_styled_text(prefix_str: str, highlighted_str: str, suffix_str: str, highlight_color: str = '#FC9706'):
+    """
+    Create stylized text with highlighted portion colored to match #sb-carrot color.
+    
+    Args:
+        prefix_str: Text that comes before the highlighted part
+        highlighted_str: Text to be highlighted and colored
+        suffix_str: Text that comes after the highlighted part
+        
+    Returns:
+        List of UI components for inline display
+    """
+    from shiny import ui
+    
+    return ui.tags.span(
+        prefix_str,
+        ui.tags.span(
+            highlighted_str,
+            style=f"color: {highlight_color}; font-weight: bold;"
+        ),
+        suffix_str
+    )
+
 def app_ui(request):
     return ui.page_fluid(
 ui.div(
@@ -56,6 +79,7 @@ ui.page_sidebar(
     ui.navset_tab(
       ui.nav_panel("NPA", ui.h4("NPA Projects"),
         # NPA Program inputs
+        ui.output_ui("npa_year_range_slider"),
         create_input_with_tooltip("npa_install_costs_init"),
         create_input_with_tooltip("npa_projects_per_year"),
         create_input_with_tooltip("num_converts_per_project"),
@@ -150,25 +174,8 @@ ui.page_sidebar(
     #     col_widths={"sm": (-7, 5)}
     # ),
     ),
-    ui.card(
-      ui.card_header("Combined Delivery Bills"),
-        ui.input_select("show_year", "Show bills in year:", 
-            choices={}, 
-            selected=None),
-      ui.output_text("total_bills_chart_description"),
-      output_widget("total_bills_chart"),
-    ),
-    ui.card(
-      ui.card_header("Average Household Delivery Bills"),
-      ui.h6("Nonconverts"),
-      ui.output_text("nonconverts_bill_per_user_chart_description"),
-      output_widget("nonconverts_bill_per_user_chart"),
-      ui.h6("Converts"),
-      ui.output_text("converts_bill_per_user_chart_description"),
-      output_widget("converts_bill_per_user_chart"),
-    ),
-
-    ui.card(
+    ui.h3("Utility Metrics"),
+        ui.card(
       ui.card_header("Utility Revenue Requirements"),
       ui.output_text("utility_revenue_reqs_chart_description"),
       output_widget("utility_revenue_reqs_chart"),
@@ -188,7 +195,26 @@ ui.page_sidebar(
       ui.output_text("return_component_chart_description"),
       output_widget("return_component_chart"),
     ),
-    col_widths={"sm": (12, 12,12, 6, 6, 6, 6)},
+
+    ui.h3("Average Household DeliveryBills"),
+    ui.card(
+      ui.card_header("Nonconverts"),
+        ui.output_ui("nonconverts_bill_per_user_chart_description"),
+        output_widget("nonconverts_bill_per_user_chart"),
+    #     ui.input_select("show_year", "Show bills in year:", 
+    #         choices={}, 
+    #         selected=None),
+    #   ui.output_text("total_bills_chart_description"),
+    #   output_widget("total_bills_chart"),
+    ),
+
+    ui.card(
+      ui.card_header("Converts"),
+      ui.output_ui("converts_bill_per_user_chart_description"),
+      output_widget("converts_bill_per_user_chart"),
+    ),
+
+    col_widths={"sm": (12,12,6, 6, 6, 6, 12, 12, 12)},
   ),
   ui.include_css(css_file),
   # title="NPA How to Pay ",
@@ -250,6 +276,23 @@ def server(input, output, session):
                 selected = end
             ui.update_select("show_year", choices=choices, selected=selected)
     
+    @render.ui
+    def npa_year_range_slider():
+        start = int(input.start_year())
+        end = int(input.end_year())
+        return ui.tooltip(
+            ui.input_slider(
+                "npa_year_range", 
+                "NPA year range", 
+                min=start, 
+                max=end, 
+                value=[start, end],
+                step=1,
+                sep=""
+            ),
+            "Select the year range for the NPA projects, Default is to assume NPAs occur in the entire analysis period."
+        )
+
     @reactive.calc
     def create_web_params():
         """Create the web parameters object for the model"""
@@ -265,6 +308,8 @@ def server(input, output, session):
             "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
             "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
             "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
+            "npa_year_start": input.npa_year_range()[0],
+            "npa_year_end": input.npa_year_range()[1],
             "is_scattershot": False,
         }
 
@@ -377,7 +422,7 @@ def server(input, output, session):
         if show_absolute:
             print("Taking absolute path")
 
-            combined_df = nhp.model.return_absolute_values_df(results_all)
+            combined_df = nhp.model.return_absolute_values_df(results_all, COMPARE_COLS)
             print("combined_df type:", type(combined_df))
             print("combined_df shape:", combined_df.shape)
             
@@ -492,12 +537,12 @@ def server(input, output, session):
             y_label_unit="$",   
             show_absolute=input.show_absolute()
         )
-    @render.text
+    @render.ui
     def nonconverts_bill_per_user_chart_description():
         if input.show_absolute():
-            return "Nonconverts annual bills for gas and electric."
+            return ui.HTML("Nonconverts annual bills for gas and electric.")
         else:
-          return "Difference in nonconverts annual bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+          return create_styled_text("Difference in nonconverts annual bills for gas and electric ", "relative to nonconverts bills in the Business as Usual (BAU) scenario", " where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
 
     @render_plotly
     def converts_bill_per_user_chart():
@@ -511,15 +556,15 @@ def server(input, output, session):
             y_label_unit="$",   
             show_absolute=input.show_absolute()
         )
-    @render.text
+    @render.ui
     def converts_bill_per_user_chart_description():
         if input.show_absolute():
-          return "Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+          return ui.HTML("Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project.")
         else:
-          return "Difference in converts annual bills for gas and electric compared to nonconverts bills in the Business as Usual (BAU) scenario where no NPA projects are implemented. Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill."
+          return create_styled_text("Difference in average annual delivery bills (gas and electric) for converts after electrification ", "relative to a non-converter in the same scenario",". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
     
     @render_plotly
-    def total_bills_chart():
+    def total_bills_chart_nonconverts():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
         req(input.show_year() is not None)  # Check that year selection is not None
@@ -529,11 +574,28 @@ def server(input, output, session):
         )
 
     @render.text
-    def total_bills_chart_description():
+    def total_bills_chart_description_nonconverts():
         if input.show_absolute():
             return "Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
         else:
-          return "Difference in annual combined delivery bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
+          return "Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+    
+    @render_plotly
+    def total_bills_chart_converts():
+        df = return_delta_or_absolute_df()
+        req(not df.is_empty())  # Check that DataFrame is not empty
+        req(input.show_year() is not None)  # Check that year selection is not None
+        
+        return plot_total_bills(
+            results_df=df.filter(pl.col("year") == int(input.show_year())),            
+        )
+
+    @render.text
+    def total_bills_chart_description_converts():
+        if input.show_absolute():
+            return "Combined annual delivery bills (gas and electric) for converts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+        else:
+          return "Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario."
 
 
     @render.download(
