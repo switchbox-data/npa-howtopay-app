@@ -13,7 +13,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric, plot_total_bills_bar
+from modules.plotting import plot_utility_metric, plot_total_bills_bar,  plot_total_bills_ts
 from npa_howtopay.params import COMPARE_COLS
 
 css_file = Path(__file__).parent / "styles.css"
@@ -199,22 +199,26 @@ ui.page_sidebar(
     ui.h3("Average Household DeliveryBills"),
     ui.card(
       ui.card_header("Nonconverts"),
-        ui.output_ui("nonconverts_bill_per_user_chart_description"),
-        ui.input_select("show_year", "Show bills in year:", 
+      ui.output_ui("nonconverts_bill_per_user_chart_description"),
+      ui.h6("Combined Annual Delivery Bills"),
+      ui.input_select("show_year", "Show bills in year:", 
         choices={}, 
         selected=None),
         ui.layout_columns(
-          output_widget("total_bills_chart_nonconverts"),
-          output_widget("nonconverts_bill_per_user_chart"),
+        output_widget("total_bills_chart_nonconverts_bar"),
+        output_widget("total_bills_chart_nonconverts"),
+        col_widths={"sm": (4,8)}
+        ),
+        output_widget("nonconverts_bill_per_user_chart"),
+
     #     ui.input_select("show_year", "Show bills in year:", 
     #         choices={}, 
     #         selected=None),
     #   ui.output_text("total_bills_chart_description"),
     
 
-        col_widths={"sm": (4,8)}
+        
         ),
-    ),
 
     ui.card(
       ui.card_header("Converts"),
@@ -574,14 +578,25 @@ def server(input, output, session):
           return create_styled_text("Difference in average annual delivery bills (gas and electric) for converts after electrification ", "relative to a non-converter in the same scenario",". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
     
     @render_plotly
-    def total_bills_chart_nonconverts():
+    def total_bills_chart_nonconverts_bar():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
         req(input.show_year() is not None)  # Check that year selection is not None
         
         return plot_total_bills_bar(
             results_df=df.filter(pl.col("year") == int(input.show_year())), converts_nonconverts="nonconverts",           
-            show_absolute=input.show_absolute()
+            show_absolute=input.show_absolute()   
+        )
+
+    @render_plotly
+    def total_bills_chart_nonconverts():
+        df = return_delta_or_absolute_df()
+        req(not df.is_empty())  # Check that DataFrame is not empty
+        # req(input.show_year() is not None)  # Check that year selection is not None
+        
+
+        return plot_total_bills_ts(
+            df,converts_nonconverts="nonconverts",            
         )
 
     @render.text
