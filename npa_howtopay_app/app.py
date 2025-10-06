@@ -15,6 +15,7 @@ from modules.input_mappings import (
 )
 from modules.plotting import plot_utility_metric, plot_total_bills_bar,  plot_total_bills_ts
 from npa_howtopay.params import COMPARE_COLS
+from ratelimit import debounce
 
 css_file = Path(__file__).parent / "styles.css"
 # Load configurations
@@ -343,6 +344,12 @@ def server(input, output, session):
             "Select the year range for the NPA projects, Default is to assume NPAs occur in the entire analysis period."
         )
 
+    @debounce(1)  # 1000ms debounce delay
+    @reactive.calc
+    def debounced_npa_year_range():
+        """Debounced version of npa_year_range to prevent model runs during dragging"""
+        return input.npa_year_range()
+
     @reactive.calc
     def create_web_params():
         """Create the web parameters object for the model"""
@@ -358,12 +365,10 @@ def server(input, output, session):
             "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
             "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
             "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
-            "npa_year_start": input.npa_year_range()[0],
-            "npa_year_end": input.npa_year_range()[1],
+            "npa_year_start": debounced_npa_year_range()[0],
+            "npa_year_end": debounced_npa_year_range()[1],
             "is_scattershot": False,
         }
-
-
         return web_params
     
     @reactive.calc
