@@ -230,6 +230,7 @@ def plot_utility_metric(
 
 def plot_total_bills(
     results_df: pl.DataFrame, 
+    converts_nonconverts: str,
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
     show_absolute: bool = True
@@ -260,7 +261,7 @@ def plot_total_bills(
     ).drop("nonconverts_total_bill_per_user")
     
     # Combine data
-    plt_df = pl.concat([converts_data, nonconverts_data])
+    plt_df = converts_data if converts_nonconverts == "converts" else nonconverts_data
     
     # Detect magnitude and get appropriate formatting for y-axis
     tick_format, suffix, scale_factor, short_suffix = detect_magnitude_and_format(plt_df["total_bill"])
@@ -281,7 +282,7 @@ def plot_total_bills(
         x="scenario_id",
         y="total_bill",
         color="scenario_id",
-        facet_col="user_type",
+        # facet_col="user_type",
         color_discrete_map=scenario_colors,
         title="",
         labels={
@@ -294,16 +295,16 @@ def plot_total_bills(
     print("Figure created successfully")
     
     # Remove the "=" prefix from facet labels and make them bold, capitalize
-    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
+    # fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
     
     # Remove y-axis titles from individual facets
-    fig.for_each_yaxis(lambda y: y.update(title=''))
+    # fig.for_each_yaxis(lambda y: y.update(title=''))
     
     # Add main y-axis label
     fig.add_annotation(
         x=-0.1,
         y=0.5,
-        text="User Bills (Total)",
+        text="Combined Annual Delivery Bills",
         textangle=-90,
         showarrow=False,
         xref="paper",
@@ -338,6 +339,7 @@ def plot_total_bills(
 
 def plot_total_bills_ts(
     delta_bau_df: pl.DataFrame, 
+    converts_nonconverts: str,
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
     show_absolute: bool = False
@@ -368,10 +370,10 @@ def plot_total_bills_ts(
     ).drop("nonconverts_total_bill_per_user")
     
     # Combine data
-    plt_df = pl.concat([converts_data, nonconverts_data])
+    plt_df = converts_data if converts_nonconverts == "converts" else nonconverts_data
     
     # Detect magnitude and get appropriate formatting for y-axis
-    tick_format, suffix, scale_factor = detect_magnitude_and_format(plt_df["total_bill"])
+    tick_format, suffix, scale_factor, short_suffix = detect_magnitude_and_format(plt_df["total_bill"])
     
     # Scale the data for display
     plt_df = plt_df.with_columns(
@@ -380,22 +382,22 @@ def plot_total_bills_ts(
     
     # Update y-axis label with suffix
     y_label_with_suffix = f"${suffix}" if suffix else "$"
-    y_label = f"Absolute Value ({y_label_with_suffix})" if show_absolute else f"Delta from BAU ({y_label_with_suffix})"
+    y_label = f"Absolute Value ({y_label_with_suffix})" if show_absolute else f"Combined Annual Delivery Bills (Delta from BAU)"
     
     print("Creating plotly figure...")
     # Create figure with facets
     fig = px.line(
         plt_df,
         x="year",
-        y="total_bill_scaled",
+        y="total_bill",
         color="scenario_id",
         line_dash="scenario_id",
-        facet_col="user_type",
+        # facet_col="user_type",
         color_discrete_map=scenario_colors,
         line_dash_map=scenario_line_styles,
         title="",
         labels={
-            "total_bill_scaled": y_label,
+            "total_bill": y_label,
             "year": "Year",
             "user_type": "",
             "scenario_id": "Scenario"
@@ -403,22 +405,22 @@ def plot_total_bills_ts(
     )
     print("Figure created successfully")
     
-    # Remove the "=" prefix from facet labels and make them bold, capitalize
-    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
+    # # Remove the "=" prefix from facet labels and make them bold, capitalize
+    # fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
     
-    # Remove y-axis titles from individual facets
-    fig.for_each_yaxis(lambda y: y.update(title=''))
+    # # Remove y-axis titles from individual facets
+    # fig.for_each_yaxis(lambda y: y.update(title=''))
     
-    # Add main y-axis label
-    fig.add_annotation(
-        x=-0.1,
-        y=0.5,
-        text="User Bills (Total)",
-        textangle=-90,
-        showarrow=False,
-        xref="paper",
-        yref="paper"
-    )
+    # # Add main y-axis label
+    # fig.add_annotation(
+    #     x=-0.1,
+    #     y=0.5,
+    #     text="User Bills (Total)",
+    #     textangle=-90,
+    #     showarrow=False,
+    #     xref="paper",
+    #     yref="paper"
+    # )
     
     # Update legend labels to use scenario_labels
     fig.for_each_trace(lambda t: t.update(name=scenario_labels.get(t.name, t.name)))
