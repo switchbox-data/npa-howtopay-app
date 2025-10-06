@@ -13,7 +13,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric,  plot_total_bills
+from modules.plotting import plot_utility_metric, plot_total_bills
 from npa_howtopay.params import COMPARE_COLS
 
 css_file = Path(__file__).parent / "styles.css"
@@ -141,7 +141,7 @@ ui.page_sidebar(
         create_input_with_tooltip("end_year"),
         ui.tooltip(
         ui.input_switch("show_absolute", "Show Absolute Values", value=False),
-        "Toggle between showing absolute values and deltas from BAU."
+        "Toggle between showing absolute values and deltas from BAU for utility metrics."# Customer bills are always shown as absolute values."
         ),
         col_widths={"sm": (5, 5, 2)}
       ),
@@ -152,6 +152,9 @@ ui.page_sidebar(
     ),
     ui.card(
       ui.card_header("Combined Delivery Bills"),
+        ui.input_select("show_year", "Show bills in year:", 
+            choices={}, 
+            selected=None),
       ui.output_text("total_bills_chart_description"),
       output_widget("total_bills_chart"),
     ),
@@ -220,6 +223,32 @@ def server(input, output, session):
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
+
+        
+    # Update year dropdown choices when start_year, end_year, or config changes
+    @reactive.effect
+    def update_year_choices():
+        # This will trigger when current_config() changes
+        config = current_config()
+        start = input.start_year()
+        end = input.end_year()
+        if start and end:
+            choices = {year: year for year in range(start, end + 1)}
+            # Set default to the current selection if valid, otherwise use start year
+            current_selection = input.show_year()
+            if current_selection is not None:
+                # Convert to int in case it's a string
+                try:
+                    current_year = int(current_selection)
+                    if start <= current_year <= end:
+                        selected = current_year
+                    else:
+                        selected = end
+                except (ValueError, TypeError):
+                    selected = end
+            else:
+                selected = end
+            ui.update_select("show_year", choices=choices, selected=selected)
     
     @reactive.calc
     def create_web_params():
@@ -313,12 +342,12 @@ def server(input, output, session):
     def create_ts_inputs():
         """Create the time series inputs for the model"""
         web_params = create_web_params()
-        return nhp.params.load_time_series_params_from_web_params(web_params, input.start_year(), input.end_year())
+        return nhp.params.load_time_series_params_from_web_params(web_params, input.start_year(), input.end_year()+1)
     
     @reactive.calc
     def create_scenario_runs():
         """Create the scenario parameters for the model"""
-        return nhp.model.create_scenario_runs(input.start_year(), input.end_year(), ["gas", "electric"], ["capex", "opex"])
+        return nhp.model.create_scenario_runs(input.start_year(), input.end_year()+1, ["gas", "electric"], ["capex", "opex"])
 
     # MODEL FUNCTIONS
 
@@ -370,7 +399,8 @@ def server(input, output, session):
         return plt_df
 
 
-    # PLOTTING FUNCTIONS  
+ # PLOTTING FUNCTIONS  
+
 
     @render_plotly
     def utility_revenue_reqs_chart():
@@ -448,7 +478,7 @@ def server(input, output, session):
         if input.show_absolute():
             return "Return on ratebase as a percentage of revenue requirement for gas and electric."
         else:
-          return "Difference in return on ratebase as a percentage of revenue requirement for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return "Difference in return on ratebase as a percentage of revenue requirement (return component percent) for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. We subtract the BAU return component percent from the scenario return component percent to get the delta."
 
     @render_plotly
     def nonconverts_bill_per_user_chart():
@@ -492,17 +522,18 @@ def server(input, output, session):
     def total_bills_chart():
         df = return_delta_or_absolute_df()
         req(not df.is_empty())  # Check that DataFrame is not empty
+        req(input.show_year() is not None)  # Check that year selection is not None
         
         return plot_total_bills(
-            delta_bau_df=df,
+            results_df=df.filter(pl.col("year") == int(input.show_year())),            
         )
 
     @render.text
     def total_bills_chart_description():
         if input.show_absolute():
-            return "Combined delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+            return "Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
         else:
-          return "Difference in combined delivery bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
+          return "Difference in annual combined delivery bills (gas and electric) for converts and nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. The converts chart (left)  shows the total bill per user for converts compared to the BAU scenario for non-converters. The nonconverts chart (right) shows the total bill per user for nonconverts compared to the BAU scenario."
 
 
     @render.download(
