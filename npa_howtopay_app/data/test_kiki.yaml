@@ -1,5 +1,5 @@
-run_name: test_kiki
-description: "Testing using values from Kiki"
+run_name: Slow Electrification
+description: "Inital set of values from Kiki. Low rate of electrification."
 
 gas:
   baseline_non_lpp_ratebase_growth: 0.066 # capex expenditures as percent of existing ratebase (including pipes, not including npas)

@@ -372,11 +372,12 @@ def plot_total_bills_bar(
 def plot_total_bills_ts(
     delta_bau_df: pl.DataFrame, 
     converts_nonconverts: str,
+    show_absolute: bool,
     y_label_title: str = "",
     show_year: int = None,
     scenario_colors: Dict[str, str] = switchbox_colors,
     scenario_line_styles: Dict[str, str] = line_styles,
-    show_absolute: bool = False
+    
 ) -> go.Figure:
     """
     Plot total bills faceted by converts/nonconverts using Plotly

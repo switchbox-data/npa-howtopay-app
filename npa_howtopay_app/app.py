@@ -648,6 +648,7 @@ def server(input, output, session):
         return plot_total_bills_ts(
             df,converts_nonconverts="nonconverts",            
             y_label_title="Combined annual delivery bills",
+            show_absolute=input.show_absolute(),
             show_year=input.show_year_nonconverts()
 
         )
@@ -680,6 +681,7 @@ def server(input, output, session):
         return plot_total_bills_ts(
             df,converts_nonconverts="converts",            
             y_label_title="Combined annual delivery bills",
+            show_absolute=input.show_absolute(),
             show_year=input.show_year_converts()
         )
 
