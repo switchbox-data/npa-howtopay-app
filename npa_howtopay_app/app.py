@@ -18,6 +18,17 @@ from npa_howtopay.params import COMPARE_COLS
 from ratelimit import debounce
 
 css_file = Path(__file__).parent / "styles.css"
+logo_file = Path(__file__).parent / "www" / "sb_logo.png"
+
+# Load logo as base64
+import base64
+if logo_file.exists():
+    with open(logo_file, "rb") as f:
+        logo_data = base64.b64encode(f.read()).decode()
+        logo_src = f"data:image/png;base64,{logo_data}"
+else:
+    logo_src = ""
+
 # Load configurations
 all_configs = load_all_configs()
 run_name_choices = {name: name for name in all_configs.keys()}
@@ -58,11 +69,17 @@ def create_styled_text(prefix_str: str, highlighted_str: str, suffix_str: str, h
 def app_ui(request):
     return ui.page_fluid(
 ui.div(
-  ui.h1("NPA How to Pay", class_="app-title"),
+  ui.div(
+    ui.tags.a(
+    ui.tags.img(src=logo_src, alt="Switchbox Logo", style="height: 40px; margin-right: 10px;"),
+    href="https://www.switch.box/",
+    target="_blank"
+) if logo_src else None,
+    ui.h1("NPA How to Pay", class_="app-title"),
+    style="display: flex; align-items: center; gap: 10px;"
+  ),
   ui.div(
     ui.download_button("download_data", "Download Data"),
-#     ui.input_bookmark_button("Bookmark Current Scenario", icon=None,  id="custom_bookmark_btn"),
-#     class_="button-group"
   ),
   class_="app-header"
 ),
