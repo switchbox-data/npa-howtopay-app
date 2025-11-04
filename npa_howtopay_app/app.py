@@ -61,8 +61,8 @@ ui.div(
   ui.h1("NPA How to Pay", class_="app-title"),
   ui.div(
     ui.download_button("download_data", "Download Data"),
-    ui.input_bookmark_button("Bookmark Current Scenario", icon=None,  id="custom_bookmark_btn"),
-    class_="button-group"
+#     ui.input_bookmark_button("Bookmark Current Scenario", icon=None,  id="custom_bookmark_btn"),
+#     class_="button-group"
   ),
   class_="app-header"
 ),
