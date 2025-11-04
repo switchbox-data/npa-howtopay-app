@@ -13,7 +13,7 @@ from modules.input_mappings import (
     PIPELINE_INPUTS, ELECTRIC_INPUTS, GAS_INPUTS, 
     FINANCIAL_INPUTS, SHARED_INPUTS, ALL_INPUT_MAPPINGS
 )
-from modules.plotting import plot_utility_metric, plot_total_bills_bar,  plot_total_bills_ts
+from modules.plotting import plot_utility_metric, plot_total_bills_bar,  plot_total_bills_ts, switchbox_colors
 from npa_howtopay.params import COMPARE_COLS
 from ratelimit import debounce
 
@@ -170,6 +170,15 @@ ui.page_sidebar(
         ),
         col_widths={"sm": (5, 5, 2)}
       ),
+        ui.accordion(
+            ui.accordion_panel(
+                ui.strong("Scenario Definitions:"),
+                ui.output_ui("scenario_definitions_table"),
+                value="scenario_definitions"
+            ),
+            open=False
+        ),
+            
     #   ui.layout_columns(
     #     ui.download_button("download_data", "Download Data", width="25%"),
     #     col_widths={"sm": (-7, 5)}
@@ -254,6 +263,36 @@ ui.page_sidebar(
 
 def server(input, output, session):
     """Server function for the Shiny app."""
+    @render.ui
+    def scenario_definitions_table():
+        """Render styled list of scenario definitions"""
+        scenarios = [
+            ("bau", "Business-as-usual (BAU):", "No NPA projects, baseline utility costs and spending. Scattershot electrification still occurs."),
+            ("taxpayer", "Taxpayer:", "All NPA costs are paid by public funds, not by utilities."),
+            ("gas_capex", "Gas Capex:", "Gas utility pays for NPA projects as capital expenditures (added to gas ratebase)."),
+            ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (expensed in year incurred)."),
+            ("electric_capex", "Electric Capex:", "Electric utility pays for NPA projects as capital expenditures (added to electric ratebase)."),
+            ("electric_opex", "Electric Opex:", "Electric utility pays for NPA projects as operating expenses (expensed in year incurred)."),
+            ("performance_incentive", "Performance Incentive:", "Cost savings are calculated as the NPV difference between avoided BAU costs and NPA costs. A percentage of savings are recovered by the gas utility as capex over 10 years")
+        ]
+
+        items = []
+        for color_key, display_name, description in scenarios:
+            color = switchbox_colors.get(color_key, '#000000')
+            items.append(
+                ui.tags.p(
+                    "- ",
+                    ui.tags.span(
+                        display_name,
+                        style=f"color: {color}; font-weight: bold;"
+                    ),
+                    " ",
+                    description
+                )
+            )
+
+        return ui.tags.div(*items)
+
     # REACTIVE INPUT HANDLING
     @reactive.calc
     def current_config():
