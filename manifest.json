@@ -9,7 +9,7 @@
     "version": "3.13.7",
     "package_manager": {
       "name": "pip",
-      "version": "25.2",
+      "version": "25.3",
       "package_file": "requirements.txt"
     }
   },
@@ -21,6 +21,9 @@
   "files": {
     "requirements.txt": {
       "checksum": "4e37cb89ab73cbafcfef00e9bff0938f"
+    },
+    ".DS_Store": {
+      "checksum": "bb1bbb6ae285b9fe560de2b849e729a2"
     },
     ".gitignore": {
       "checksum": "f8e8a00c2853cea494799089cbfcef8a"
@@ -44,13 +47,13 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
-      "checksum": "6486a4f1f1b095fa0cecd05c79d1da12"
+      "checksum": "c42d1b75400e4d7136755c787adfe8cd"
     },
     "npa_howtopay_app/__pycache__/ratelimit.cpython-313.pyc": {
       "checksum": "57b2b7928fe7f4167563843b65928f47"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "c8bab6b992b948f98cd1b1f7aa8f2c14"
+      "checksum": "fd8765c849aec44c50600ab89cafda32"
     },
     "npa_howtopay_app/data/test.yaml": {
       "checksum": "79693d9a8ba0458a07ae07c5b96d3315"
@@ -90,6 +93,9 @@
     },
     "npa_howtopay_app/styles.css": {
       "checksum": "58bf219a923bd0ed2bfc027564d084aa"
+    },
+    "npa_howtopay_app/www/sb_logo.png": {
+      "checksum": "226ad3cd3e7c1b5f49f29af7c911f529"
     },
     "pyproject.toml": {
       "checksum": "b2e714917a45416af71ad2b0c04c3eba"
