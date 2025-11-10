@@ -567,3 +567,17 @@ body {
   color: var(--sb-white) !important;
 }
 
+/* Run Model Button Styling */
+#calculate_btn {
+  background-color: var(--sb-midnight) !important;
+  color: var(--sb-white) !important;
+  border-color: var(--sb-midnight) !important;
+  transition: all 0.2s ease !important;
+}
+
+#calculate_btn:hover {
+  background-color: var(--sb-carrot) !important;
+  border-color: var(--sb-carrot) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(252, 151, 6, 0.3) !important;
+}

@@ -197,7 +197,7 @@ ui.page_sidebar(
         ),
 
                ui.layout_columns(
-        ui.input_action_button("calculate_btn", "Run Model", class_="btn-primary", width="100%"),
+        ui.input_action_button("calculate_btn", "Run Model", class_="btn-primary", width="100%", style="background-color: #023047; color: white; border-color: #023047;"),
         col_widths={"sm":(-8, 4)}
       ),
     ),
@@ -528,7 +528,7 @@ def server(input, output, session):
         return results_all
 
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.run_name, input.show_absolute, ignore_none=False, ignore_init=False)
     def return_delta_or_absolute_df():
         results_all = run_model()
         print("results_all type:", type(results_all))
@@ -557,7 +557,7 @@ def server(input, output, session):
         
         return combined_df
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.run_name,  input.show_absolute, ignore_none=False, ignore_init=False)
     def prep_df_to_plot():
         combined_df = return_delta_or_absolute_df()
         
