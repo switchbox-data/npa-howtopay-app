@@ -25,7 +25,7 @@ PIPELINE_INPUTS = {
     "npa_install_costs_init": {
         "label": "NPA cost per household",
         "config_path": ["shared", "npa_install_costs_init"],
-        "tooltip": "Initial cost per household to install NPA equipment (exlcluding any incentive programs). Cost will grow annually by the cost inflation rate."
+        "tooltip": "Initial cost per household to install NPA equipment (excluding any incentive programs). Cost will grow annually by the cost inflation rate."
     },
     "npa_projects_per_year": {
         "label": "NPA projects per year",
@@ -50,7 +50,7 @@ PIPELINE_INPUTS = {
     "npa_lifetime": {
         "label": "NPA lifetime (years)",
         "config_path": ["shared", "npa_lifetime"],
-        "tooltip": "Expected operational lifetime of NPA equipment"
+        "tooltip": "Depreciation lifetime for NPA expenses."
     },
     "hp_efficiency": {
         "label": "HP efficiency",
@@ -63,19 +63,19 @@ PIPELINE_INPUTS = {
         "tooltip": "Water heater efficiency - units of heat per unit of electricity. Used to estimate additional electric demand after conversion"
     },
     "aircon_percent_adoption_pre_npa": {
-        "label": "Aircon percent adoption pre-NPA",
+        "label": "AC percent adoption pre-NPA",
         "config_path": ["npa", "aircon_percent_adoption_pre_npa"],
         "tooltip": "Percentage of households that already have air conditioning before NPA"
     },
     "peak_kw_summer_headroom": {
         "label": "Summer peak headroom (kW)",
         "config_path": ["npa", "peak_kw_summer_headroom"],
-        "tooltip": "Peak headroom in summer for the grid feeding these household"
+        "tooltip": "Peak headroom in summer for the grid feeding these households"
     },
     "peak_kw_winter_headroom": {
         "label": "Winter peak headroom (kW)",
         "config_path": ["npa", "peak_kw_winter_headroom"],
-        "tooltip": "Peak headroom in winter for the grid feeding these household"
+        "tooltip": "Peak headroom in winter for the grid feeding these households"
     }
 }
 
@@ -98,7 +98,7 @@ ELECTRIC_INPUTS = {
     "electric_default_depreciation_lifetime": {
         "label": "Electric default depreciation lifetime",
         "config_path": ["electric", "default_depreciation_lifetime"],
-        "tooltip": "Default number of years over which electric utility assets are depreciated (exlcuding NPAs). Used to estimate depreciation for synthetic initial capex projects the would result in the initial ratebase."
+        "tooltip": "Default number of years over which electric utility assets are depreciated (excluding NPAs). Used to estimate depreciation for synthetic initial capex projects that would result in the initial ratebase."
     },
     "electric_maintenance_cost_pct": {
         "label": "Electric maintenance cost (%)",
@@ -131,9 +131,9 @@ ELECTRIC_INPUTS = {
         "tooltip": "Annual fixed charge per customer ($)"
     },
     "grid_upgrade_depreciation_lifetime": {
-        "label": "Grid upgrade depreciation lifetime",
+        "label": "Grid upgrade depreciation lifetime (average)",
         "config_path": ["electric", "grid_upgrade_depreciation_lifetime"],
-        "tooltip": "Depreciation lifetime for grid infrastructure upgrades"
+        "tooltip": "Average depreciation lifetime for grid infrastructure upgrades"
     },
     "per_user_electric_need_kwh": {
         "label": "Per user electric need (kWh)",
@@ -141,9 +141,9 @@ ELECTRIC_INPUTS = {
         "tooltip": "Average annual electricity consumption per customer in kilowatt-hours"
     },
     "aircon_peak_kw": {
-        "label": "Aircon peak kW",
+        "label": "AC peak kW",
         "config_path": ["electric", "aircon_peak_kw"],
-        "tooltip": "Peak energy consumption of a household's new airconditioning unit. Used to estimate additional summerelectric demand for converters without AC prior to NPA."
+        "tooltip": "Peak energy consumption of a household's new air conditioning unit. Used to estimate additional summer electric demand for converters without AC prior to NPA."
     },
     "hp_peak_kw": {        
         "label": "Heat pump peak kW",
@@ -153,7 +153,7 @@ ELECTRIC_INPUTS = {
     "distribution_cost_per_peak_kw_increase_init": {
         "label": "Distribution cost per peak kW increase",
         "config_path": ["electric", "distribution_cost_per_peak_kw_increase_init"],
-        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand. This costs will grow annually by the cost inflation rate."
+        "tooltip": "Cost to increase grid capacity by one kilowatt of peak demand. This cost will grow annually by the cost inflation rate."
     }
 }
 
@@ -181,12 +181,12 @@ GAS_INPUTS = {
     "gas_bau_lpp_costs_per_year": {
         "label": "Gas BAU pipeline replacement costs per year",
         "config_path": ["web_params", "gas_bau_lpp_costs_per_year"],
-        "tooltip": "Gas pipeline repacement costs per year without any NPA projects (BAU). These costs will grow annually by the cost inflation rate."
+        "tooltip": "Gas pipeline replacement costs per year without any NPA projects (BAU). These costs will grow annually by the cost inflation rate."
     },
     "baseline_non_lpp_ratebase_growth": {
-        "label": "Baseline non-LPP ratebase growth",
+        "label": "Baseline ratebase growth (excluding pipeline replacement programs)",
         "config_path": ["gas", "baseline_non_lpp_ratebase_growth"],
-        "tooltip": "Annual growth rate of gas utility ratebase excluding pipeline replacements"
+        "tooltip": "Baseline non-pipe replacement ratebase annual growth."
     },
     "non_lpp_depreciation_lifetime": {
         "label": "Non-pipeline depreciation lifetime",
@@ -199,9 +199,9 @@ GAS_INPUTS = {
         "tooltip": "Annual fixed charge per customer ($)"
     },
     "gas_generation_cost_per_therm_init": {
-        "label": "Gas generation cost per therm",
+        "label": "Gas commodity cost (per therm)",
         "config_path": ["gas", "gas_generation_cost_per_therm_init"],
-        "tooltip": "Cost per therm of natural gas in the initial year. These costs will grow annually by the cost inflation rate."
+        "tooltip": "Cost per therm of natural gas in the initial year. Used to estimate the variable costs of the gas utility. These costs will grow annually by the cost inflation rate."
     },
     "per_user_heating_need_therms": {
         "label": "Per user heating need (therms)",

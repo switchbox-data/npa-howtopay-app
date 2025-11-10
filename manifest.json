@@ -47,19 +47,19 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
-      "checksum": "c42d1b75400e4d7136755c787adfe8cd"
+      "checksum": "2259215f32b4e76674df8f6db80af969"
     },
     "npa_howtopay_app/__pycache__/ratelimit.cpython-313.pyc": {
       "checksum": "57b2b7928fe7f4167563843b65928f47"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "fd8765c849aec44c50600ab89cafda32"
+      "checksum": "1157edc59f8c576207333f25de6a4091"
     },
     "npa_howtopay_app/data/test.yaml": {
-      "checksum": "79693d9a8ba0458a07ae07c5b96d3315"
+      "checksum": "4b9df9f63aa7d76b71e65109fcd69c24"
     },
     "npa_howtopay_app/data/test_kiki.yaml": {
-      "checksum": "2d0b33a62c630cb2272e3cb52969771b"
+      "checksum": "ea3fc241f0a388af83aadfcf42fa2574"
     },
     "npa_howtopay_app/modules/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
@@ -71,7 +71,7 @@
       "checksum": "8b03b20508395147adae42d1bf57a646"
     },
     "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-313.pyc": {
-      "checksum": "0a0b51b32e1b989a4cedef1683dbd7be"
+      "checksum": "6d2c64fed1bc41473129c43c4e4669aa"
     },
     "npa_howtopay_app/modules/__pycache__/plotting.cpython-313.pyc": {
       "checksum": "f01e58249453d372b5a138f921320b70"
@@ -80,7 +80,7 @@
       "checksum": "4df016fb54ae3864ef44d3e093c23ab4"
     },
     "npa_howtopay_app/modules/input_mappings.py": {
-      "checksum": "9200715b4573e549b828630fba78b157"
+      "checksum": "fde48e9a9df6e12e45cb2a3d983921e5"
     },
     "npa_howtopay_app/modules/plotting.py": {
       "checksum": "c0f8af57978e2fc73fc03da703410dd7"
@@ -92,7 +92,7 @@
       "checksum": "ef0bf409a060e5b2cdfc4d09ec11cfff"
     },
     "npa_howtopay_app/styles.css": {
-      "checksum": "58bf219a923bd0ed2bfc027564d084aa"
+      "checksum": "4cf2abe53848a1b0aa3ee4effc1a01a3"
     },
     "npa_howtopay_app/www/sb_logo.png": {
       "checksum": "226ad3cd3e7c1b5f49f29af7c911f529"

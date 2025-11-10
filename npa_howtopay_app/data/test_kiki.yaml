@@ -1,5 +1,5 @@
-run_name: Slow Electrification
-description: "Inital set of values from Kiki. Low rate of electrification."
+run_name: Low NPA Scenario
+description: "Small number of NPA projects."
 
 gas:
   baseline_non_lpp_ratebase_growth: 0.066 # capex expenditures as percent of existing ratebase (including pipes, not including npas)

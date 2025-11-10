@@ -121,7 +121,6 @@ ui.page_sidebar(
         # create_input_with_tooltip("pipeline_decomm_cost_per_user"),
         create_input_with_tooltip("pipeline_depreciation_lifetime"),
         create_input_with_tooltip("pipeline_maintenance_cost_pct"),
-        create_input_with_tooltip("gas_bau_lpp_costs_per_year"),
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
@@ -144,6 +143,7 @@ ui.page_sidebar(
         create_input_with_tooltip("gas_num_users_init"),
         create_input_with_tooltip("gas_user_bill_fixed_charge"),
         create_input_with_tooltip("gas_ratebase_init"),
+        create_input_with_tooltip("gas_bau_lpp_costs_per_year"),
         create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
         create_input_with_tooltip("gas_ror"),
         create_input_with_tooltip("gas_fixed_overhead_costs"),
@@ -172,7 +172,7 @@ ui.page_sidebar(
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
-        ui.p("Welcome to the NPA How to Pay app! Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. The app will then run the model and plot the results. For more information on the underlying model, see the",
+        ui.p("Welcome to the NPA How to Pay app! Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results. For more information on the underlying model, see the",
         ui.tags.a(" NPA How to Pay documentation.", href="https://switchbox-data.github.io/npa-howtopay/", target="_blank"),
         "."
     ),
@@ -195,11 +195,11 @@ ui.page_sidebar(
             ),
             open=False
         ),
-            
-    #   ui.layout_columns(
-    #     ui.download_button("download_data", "Download Data", width="25%"),
-    #     col_widths={"sm": (-7, 5)}
-    # ),
+
+               ui.layout_columns(
+        ui.input_action_button("calculate_btn", "Run Model", class_="btn-primary", width="100%", style="background-color: #023047; color: white; border-color: #023047;"),
+        col_widths={"sm":(-8, 4)}
+      ),
     ),
     ui.h3("Utility Metrics"),
         ui.card(
@@ -407,6 +407,7 @@ def server(input, output, session):
         return input.npa_year_range()
 
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_web_params():
         """Create the web parameters object for the model"""
         web_params = {
@@ -428,6 +429,7 @@ def server(input, output, session):
         return web_params
     
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_gas_params():
         """Create the parameters object for the model"""
         gas_params = nhp.params.GasParams(
@@ -447,6 +449,7 @@ def server(input, output, session):
         return gas_params
         
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_electric_params():
         """Create the parameters object for the model"""
         electric_params = nhp.params.ElectricParams(
@@ -469,22 +472,23 @@ def server(input, output, session):
         return electric_params
 
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_shared_params():
         """Create the parameters object for the model"""
         shared_params = nhp.params.SharedParams(
-          cost_inflation_rate=input.cost_inflation_rate(), 
-          real_dollar_discount_rate=input.real_dollar_discount_rate(), 
-          npv_discount_rate=input.npv_discount_rate(),
-          performance_incentive_pct=input.performance_incentive_pct(),
-          incentive_payback_period=input.incentive_payback_period(),
-          construction_inflation_rate=input.construction_inflation_rate(),
-          npa_install_costs_init=input.npa_install_costs_init(),
-          npa_lifetime=input.npa_lifetime(), 
-          start_year=input.start_year())
-
-        
+            cost_inflation_rate=input.cost_inflation_rate(), 
+            real_dollar_discount_rate=input.real_dollar_discount_rate(), 
+            npv_discount_rate=input.npv_discount_rate(),
+            performance_incentive_pct=input.performance_incentive_pct(),
+            incentive_payback_period=input.incentive_payback_period(),
+            construction_inflation_rate=input.construction_inflation_rate(),
+            npa_install_costs_init=input.npa_install_costs_init(),
+            npa_lifetime=input.npa_lifetime(), 
+            start_year=input.start_year()
+        )
         return shared_params
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_input_params():
         """Create the parameters object for the model"""
         input_params = nhp.params.InputParams(
@@ -495,19 +499,26 @@ def server(input, output, session):
         return input_params
 
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_ts_inputs():
         """Create the time series inputs for the model"""
         web_params = create_web_params()
-        return nhp.params.load_time_series_params_from_web_params(web_params, input.start_year(), input.end_year()+1)
+        start_year = input.start_year()
+        end_year = input.end_year()
+        return nhp.params.load_time_series_params_from_web_params(web_params, start_year, end_year+1)
     
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_scenario_runs():
         """Create the scenario parameters for the model"""
-        return nhp.model.create_scenario_runs(input.start_year(), input.end_year()+1, ["gas", "electric"], ["capex", "opex"])
+        start_year = input.start_year()
+        end_year = input.end_year()
+        return nhp.model.create_scenario_runs(start_year, end_year+1, ["gas", "electric"], ["capex", "opex"])
 
     # MODEL FUNCTIONS
 
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def run_model():
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
@@ -517,6 +528,7 @@ def server(input, output, session):
         return results_all
 
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name, input.show_absolute, ignore_none=False, ignore_init=False)
     def return_delta_or_absolute_df():
         results_all = run_model()
         print("results_all type:", type(results_all))
@@ -545,6 +557,7 @@ def server(input, output, session):
         
         return combined_df
     @reactive.calc
+    @reactive.event(input.calculate_btn, input.run_name,  input.show_absolute, ignore_none=False, ignore_init=False)
     def prep_df_to_plot():
         combined_df = return_delta_or_absolute_df()
         
