@@ -588,9 +588,9 @@ def server(input, output, session):
     @render.text
     def utility_revenue_reqs_chart_description():
         if input.show_absolute():
-            return "Utility revenue requirements for gas and electric. These are the revenue requirements for the utility to cover its costs and expenses."
+            return f"Utility revenue requirements for gas and electric. These are the revenue requirements for the utility to cover its costs and expenses. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses."
+          return f"Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def volumetric_tariff_chart():
@@ -609,9 +609,9 @@ def server(input, output, session):
     @render.text
     def volumetric_tariff_chart_description():
         if input.show_absolute():
-            return "Volumetric tariffs for gas (therms) and electric (kWh)."
+            return f"Volumetric tariffs for gas (therms) and electric (kWh). All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def ratebase_chart():
@@ -629,9 +629,9 @@ def server(input, output, session):
     @render.text
     def ratebase_chart_description():
         if input.show_absolute():
-            return "Annual ratebase for gas and electric."
+            return f"Annual ratebase for gas and electric. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def return_component_chart():
@@ -670,9 +670,9 @@ def server(input, output, session):
     @render.ui
     def nonconverts_bill_per_user_chart_description():
         if input.show_absolute():
-            return ui.HTML("Nonconverts annual bills for gas and electric.")
+            return ui.HTML(f"Nonconverts annual bills for gas and electric. All dollar values are inflation adjusted to {input.start_year()} dollars.")
         else:
-          return create_styled_text("Difference in nonconverts annual bills for gas and electric ", "relative to nonconverts bills in the Business as Usual (BAU) scenario", " where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
+          return create_styled_text(f"Difference in nonconverts annual bills for gas and electric ", f"relative to nonconverts bills in the Business as Usual (BAU) scenario", f" where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill. All dollar values are inflation adjusted to {input.start_year()} dollars.")
 
     @render_plotly
     def converts_bill_per_user_chart():
@@ -691,9 +691,9 @@ def server(input, output, session):
     @render.ui
     def converts_bill_per_user_chart_description():
         if input.show_absolute():
-          return ui.HTML("Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project.")
+          return ui.HTML(f"Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars.")
         else:
-          return create_styled_text("Difference in average annual delivery bills (gas and electric) for converts after electrification ", "relative to a non-converter in the same scenario",". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
+          return create_styled_text(f"Difference in average annual delivery bills (gas and electric) for converts after electrification ", f"relative to a non-converter in the same scenario",f". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill. All dollar values are inflation adjusted to {input.start_year()} dollars.")
     
     @render_plotly
     def total_bills_chart_nonconverts_bar():
@@ -725,9 +725,9 @@ def server(input, output, session):
     @render.text
     def total_bills_chart_description_nonconverts():
         if input.show_absolute():
-            return "Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+            return f"Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
         
     @render_plotly
     def total_bills_chart_converts_bar():
@@ -757,9 +757,9 @@ def server(input, output, session):
     @render.text
     def total_bills_chart_description_converts():
         if input.show_absolute():
-            return "Combined annual delivery bills (gas and electric) for converts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+            return f"Combined annual delivery bills (gas and electric) for converts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario."
+          return f"Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
 
     @render.download(
