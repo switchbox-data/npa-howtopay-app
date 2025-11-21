@@ -426,8 +426,8 @@ def server(input, output, session):
     def scenario_definitions_table():
         """Render styled list of scenario definitions"""
         scenarios = [
-            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends <strong>{gas_bau_lpp_costs_per_year()}</strong> in leak-prone pipe replacement per year, affecting <strong>{lpp_hh()}</strong> households. Investment is treated as gas capex, and added to their rate base and recovered over <strong>{input.pipeline_depreciation_lifetime()}</strong> years from the year the replacement is done. Scattershot electrification still occurs."),
-            ('npa_program_desc', "Modeled NPA program:", f"Gas utility only spends <strong>{reduced_lpp_costs_per_year()}</strong> on pipeline replacement per year, for <strong>{reduced_lpp_hh()}</strong> households. The remaining <strong>{npa_hh()}</strong> get electrified instead (and their pipe is decommissioned), at a cost of <strong>{npa_costs_per_year()}</strong>. This would save <strong>${lpp_savings_per_year()}</strong> in avoided pipeline spending compared to business as usual. But who would pay for the <strong>{npa_costs_per_year()}</strong> in NPA costs? We model 6 possible scenarios, each with their own implications for ratepayers:"),
+            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends <strong>{gas_bau_lpp_costs_per_year()}</strong> in leak-prone pipe replacement, affecting <strong>{lpp_hh()}</strong> households per year. Investment is treated as gas capex, and added to their rate base and recovered over <strong>{input.pipeline_depreciation_lifetime()}</strong> years from the year the replacement is done. Scattershot electrification still occurs."),
+            ('npa_program_desc', "Modeled NPA program:", f"Gas utility only spends <strong>{reduced_lpp_costs_per_year()}</strong> on pipeline replacement for <strong>{reduced_lpp_hh()}</strong> households per year. The remaining <strong>{npa_hh()}</strong> get electrified instead (and their pipe is decommissioned), at a cost of <strong>{npa_costs_per_year()}</strong>. This would save <strong>${lpp_savings_per_year()}</strong> in avoided pipeline spending compared to business as usual. But who would pay for the <strong>{npa_costs_per_year()}</strong> in NPA costs? We model 6 possible scenarios, each with their own implications for ratepayers:"),
             ("gas_capex", "Gas Capex:", f"Gas utility pays for NPA projects as capital expenditures (added to gas ratebase and recovered over <strong>{input.npa_lifetime()}</strong> years from the year the project is done)."),
             ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (not added to ratebase, recovered in year incurred)."),
             ("performance_incentive", "Performance Incentive:", f" Gas utilities would receive alternative compensation for engaging in NPAs: they would be allowed to treat a portion of the savings as capex, recovered over <strong>{input.incentive_payback_period()}</strong> years. Savings would be defined as the net-present-value of the difference between avoided BAU costs and NPA costs."),
@@ -750,7 +750,7 @@ def server(input, output, session):
     # MODEL FUNCTIONS
 
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, ignore_none=False, ignore_init=False)
     def run_model():
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
@@ -760,7 +760,7 @@ def server(input, output, session):
         return results_all
 
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, input.show_absolute, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.show_absolute, ignore_none=False, ignore_init=False)
     def return_delta_or_absolute_df():
         results_all = run_model()
         print("results_all type:", type(results_all))
@@ -789,7 +789,7 @@ def server(input, output, session):
         
         return combined_df
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name,  input.show_absolute, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.show_absolute, ignore_none=False, ignore_init=False)
     def prep_df_to_plot():
         combined_df = return_delta_or_absolute_df()
         
@@ -1112,14 +1112,15 @@ def server(input, output, session):
         npa_projects = input.npa_projects_per_year()
         num_converts = input.num_converts_per_project()
         gas_users_init = input.gas_num_users_init()
+        npa_years = input.npa_year_range()[1] - input.npa_year_range()[0]
         
         # Only check if all values are valid (not None)
         if (npa_projects is not None and num_converts is not None and gas_users_init is not None):
             npa_hh_per_year = npa_projects * num_converts
             
-            if npa_hh_per_year > gas_users_init:
+            if npa_hh_per_year * npa_years > gas_users_init:
                 ui.notification_show(
-                    f"Warning: NPA households per year ({npa_hh_per_year:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
+                    f"Warning: Total NPA households ({npa_hh_per_year * npa_years:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
                     duration=10,
                     type="warning"
                 )
