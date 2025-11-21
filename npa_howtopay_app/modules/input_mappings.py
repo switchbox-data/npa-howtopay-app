@@ -2,7 +2,7 @@
 PIPELINE_INPUTS = {
     # Pipeline Economics section
     "pipe_value_per_user": {
-        "label": "Pipeline replacement cost",
+        "label": "Pipeline replacement cost per household",
         "config_path": ["npa", "pipe_value_per_user"],
         "tooltip": "Pipeline replacement cost per NPA household",
         "type": float,
@@ -345,7 +345,7 @@ FINANCIAL_INPUTS = {
     "performance_incentive_pct": {
         "label": "Performance incentive percentage (%)",
         "config_path": ["shared", "performance_incentive_pct"],
-        "tooltip": "Percentage of savings (avoided LPP spending) on which gas utility receives a performance incentive (used for performance incentive scenario)",
+        "tooltip": "Percentage of savings (avoided pipe replacement spending) on which gas utility receives a performance incentive (used for performance incentive scenario)",
         "type": float,
         "min": 0,
         "max": 100,

@@ -1,3 +1,4 @@
+from typing import Any
 import plotly.express as px
 import polars as pl
 from pathlib import Path
@@ -250,9 +251,9 @@ ui.page_sidebar(
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
-        ui.p("Welcome to the NPA How to Pay app! Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results. For more information on the underlying model, see the",
+        ui.p("Welcome to the NPA How to Pay app! This model is best used to explore the relative impact of different NPA scenarios on utility financials and delivery bills. This is not a complete model of utility operations and we do not model supply side variables. It is intended to be a tool for exploring the relative direction and magnitude of different NPA scenarios on utility financials and delivery bills. The default view presents the results as a difference from the Business as Usual (BAU) scenario where no NPA projects are implemented (See Scenario Description below). For more information on the underlying model, see the",
         ui.tags.a(" NPA How to Pay documentation.", href="https://switchbox-data.github.io/npa-howtopay/", target="_blank"),
-        "."
+        ".", ui.br(),ui.br(), "Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results."
     ),
       ),
       ui.layout_columns(
@@ -267,11 +268,11 @@ ui.page_sidebar(
       ),
         ui.accordion(
             ui.accordion_panel(
-                ui.strong("Scenario Definitions:"),
+                ui.strong("Scenario Descriptions:"),
                 ui.output_ui("scenario_definitions_table"),
                 value="scenario_definitions"
             ),
-            open=False
+            open=True
         ),
 
                ui.layout_columns(
@@ -358,33 +359,89 @@ ui.page_sidebar(
 
 def server(input, output, session):
     """Server function for the Shiny app."""
+
+    # INSERT_YOUR_CODE
+    @reactive.calc
+    def lpp_hh():
+        value = round(input.gas_bau_lpp_costs_per_year() / input.pipe_value_per_user())
+        return f"{value:,}"
+
+    @reactive.calc
+    def reduced_lpp_costs_per_year():
+        value = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"${int(value)/1e6:.0f}M"
+    
+    @reactive.calc
+    def reduced_lpp_hh():
+        reduced_costs = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        value = round(reduced_costs / input.pipe_value_per_user())
+        return f"{value:,}"
+
+    @reactive.calc
+    def npa_hh():
+        value = input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"{value:,}"
+
+    @reactive.calc
+    def npa_costs_per_year():
+        value = input.npa_install_costs_init()*input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"${int(value)/1e6:.0f}M"
+    
+    @reactive.calc
+    def gas_bau_lpp_costs_per_year():
+        value = input.gas_bau_lpp_costs_per_year()
+        return f"${int(value)/1e6:.0f}M"
+
+    @reactive.calc
+    def lpp_savings_per_year():
+        bau_costs = input.gas_bau_lpp_costs_per_year()
+        reduced_costs = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        value = int(bau_costs) - int(reduced_costs)
+        return f"{value/1e6:.0f}M"
+
     @render.ui
     def scenario_definitions_table():
         """Render styled list of scenario definitions"""
         scenarios = [
-            ("bau", "Business-as-usual (BAU):", "No NPA projects, baseline utility costs and spending. Scattershot electrification still occurs."),
-            ("taxpayer", "Taxpayer:", "All NPA costs are paid by public funds, not by utilities."),
-            ("gas_capex", "Gas Capex:", "Gas utility pays for NPA projects as capital expenditures (added to gas ratebase)."),
+            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends {gas_bau_lpp_costs_per_year()} in leak-prone pipe replacement per year, affecting {lpp_hh()} households. Investment is treated as gas capex, and added to their rate base and recovered over {input.pipeline_depreciation_lifetime()} years from the year the replacement is done. Scattershot electrification still occurs."),
+            ('npa_program_desc', "Proposed NPA scenario:", f"Gas utility only spends {reduced_lpp_costs_per_year()} on pipeline replacement per year, for {reduced_lpp_hh()} households. The remaining {npa_hh()} get electrified instead (and their pipe is decommissioned), at a cost of {npa_costs_per_year()}. This would save ${lpp_savings_per_year()} in avoided pipeline spending compared to business as usual. But who would pay for the {npa_costs_per_year()} in NPA costs? We modeled 6 possible scenarios, each with their own implications for ratepayers:"),
+            ("gas_capex", "Gas Capex:", f"Gas utility pays for NPA projects as capital expenditures (added to gas ratebase and recovered over {input.npa_lifetime()} years from the year the project is done)."),
             ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (expensed in year incurred)."),
-            ("electric_capex", "Electric Capex:", "Electric utility pays for NPA projects as capital expenditures (added to electric ratebase)."),
+            ("performance_incentive", "Performance Incentive:", "Cost savings are calculated as the NPV difference between avoided BAU costs and NPA costs. A percentage of savings are recovered by the gas utility as capex over 10 years."),
+            ("electric_capex", "Electric Capex:", f"Electric utility pays for NPA projects as capital expenditures (added to electric ratebase and recovered over {input.npa_lifetime()} years from the year the project is done)."),
             ("electric_opex", "Electric Opex:", "Electric utility pays for NPA projects as operating expenses (expensed in year incurred)."),
-            ("performance_incentive", "Performance Incentive:", "Cost savings are calculated as the NPV difference between avoided BAU costs and NPA costs. A percentage of savings are recovered by the gas utility as capex over 10 years")
+
+            ("taxpayer", "Taxpayer:", "All NPA costs are paid by public funds, not by utilities."),
         ]
 
         items = []
         for color_key, display_name, description in scenarios:
             color = switchbox_colors.get(color_key, '#000000')
-            items.append(
-                ui.tags.p(
-                    "- ",
-                    ui.tags.span(
-                        display_name,
-                        style=f"color: {color}; font-weight: bold;"
-                    ),
-                    " ",
-                    description
+            if color_key not in ['npa_program_desc', 'bau']:
+                items.append(
+                    ui.tags.p(
+                        "     - ",
+                        ui.tags.span(
+                            display_name,
+                            style=f"color: {color}; font-weight: bold;"
+                        ),
+                        " ",
+                        description
+                    )
                 )
-            )
+            else:
+                items.append(
+                  items.append(
+                    ui.tags.p(
+                        ui.tags.span(
+                            display_name,
+                            style=f"color: {color}; font-weight: bold;"
+                        ),
+                        " ",
+                        description
+                    )
+                )
+                )
 
         return ui.tags.div(*items)
 
