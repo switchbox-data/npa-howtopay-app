@@ -620,7 +620,7 @@ def server(input, output, session):
         
         return plot_utility_metric(
             plt_df=df,
-            column="ratebase",
+            column="inflation_adjusted_ratebase",
             title="Ratebase",
             y_label_unit="$",
             y_label_title="Ratebase",

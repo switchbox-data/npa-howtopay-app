@@ -50,7 +50,7 @@ PIPELINE_INPUTS = {
     "npa_lifetime": {
         "label": "NPA lifetime (years)",
         "config_path": ["shared", "npa_lifetime"],
-        "tooltip": "Depreciation lifetime for NPA expenses."
+        "tooltip": "Depreciation lifetime for NPA expenses. Setting this to 0 would be the same as paying as operating expense rather than capital expense."
     },
     "hp_efficiency": {
         "label": "HP efficiency",
@@ -229,7 +229,7 @@ FINANCIAL_INPUTS = {
     "real_dollar_discount_rate": {
         "label": "Inflation adjustment rate (%)",
         "config_path": ["shared", "real_dollar_discount_rate"],
-        "tooltip": "Rate at which future costs and expenses are discounted to present results in today's dollars"
+        "tooltip": "Rate at which future costs and expenses are discounted to present results in today's dollars. Setting this to 0 will results in nominal values."
     },
     "npv_discount_rate": {
         "label": "NPV discount rate (%)",
