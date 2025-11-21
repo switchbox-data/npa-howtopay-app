@@ -4,6 +4,7 @@ import polars as pl
 from pathlib import Path
 import tempfile
 import io
+import zipfile
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui, req
 import npa_howtopay as nhp
@@ -970,21 +971,104 @@ def server(input, output, session):
           return f"Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
 
+    def collect_input_parameters():
+        """Collect all current input parameter values into a Polars DataFrame"""
+        parameters = []
+        
+        # Collect all inputs from ALL_INPUT_MAPPINGS
+        for input_id, input_data in ALL_INPUT_MAPPINGS.items():
+            try:
+                # Get the input value using getattr
+                input_attr = getattr(input, input_id, None)
+                if input_attr is not None:
+                    value = input_attr()
+                    
+                    # Convert None to empty string for CSV
+                    if value is None:
+                        value = ""
+                    
+                    # Get config path as string
+                    config_path_str = " > ".join(input_data.get("config_path", []))
+                    
+                    parameters.append({
+                        "parameter_name": input_id,
+                        "label": input_data.get("label", input_id),
+                        "value": value,
+                        "type": str(input_data.get("type", "").__name__) if input_data.get("type") else "",
+                        "config_path": config_path_str
+                    })
+            except (AttributeError, TypeError, Exception):
+                # Skip if input doesn't exist or can't be accessed
+                continue
+        
+        # Add metadata parameters
+        try:
+            parameters.append({
+                "parameter_name": "run_name",
+                "label": "Selected scenario/run name",
+                "value": input.run_name(),
+                "type": "str",
+                "config_path": "metadata"
+            })
+        except Exception:
+            pass
+        
+        try:
+            npa_range = input.npa_year_range()
+            if isinstance(npa_range, list):
+                parameters.append({
+                    "parameter_name": "npa_year_range",
+                    "label": "NPA year range",
+                    "value": f"{npa_range[0]}-{npa_range[1]}",
+                    "type": "list",
+                    "config_path": "metadata"
+                })
+        except Exception:
+            pass
+        
+        # Create DataFrame
+        if parameters:
+            return pl.DataFrame(parameters)
+        else:
+            return pl.DataFrame({
+                "parameter_name": [],
+                "label": [],
+                "value": [],
+                "type": [],
+                "config_path": []
+            })
+
     @render.download(
-        filename=lambda: f'{input.run_name()}_data.csv',
-        media_type="text/csv"
+        filename=lambda: f'{input.run_name()}_data.zip',
+        media_type="application/zip"
     )
     def download_data():
+        # Get results DataFrame
         df_to_download = return_delta_or_absolute_df()
-
-        # Use BytesIO buffer to capture CSV output
-
-        buffer = io.BytesIO()
-        df_to_download.write_csv(buffer)
-        buffer.seek(0)
         
-        # Yield the buffer content
-        yield buffer.getvalue()
+        # Get parameters DataFrame
+        params_df = collect_input_parameters()
+        
+        # Create zip file in memory
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Write results CSV
+            results_buffer = io.BytesIO()
+            df_to_download.write_csv(results_buffer)
+            results_buffer.seek(0)
+            zip_file.writestr("results.csv", results_buffer.getvalue())
+            
+            # Write parameters CSV
+            params_buffer = io.BytesIO()
+            params_df.write_csv(params_buffer)
+            params_buffer.seek(0)
+            zip_file.writestr("parameters.csv", params_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Yield the zip file content
+        yield zip_buffer.getvalue()
 
     # Custom bookmark button handler
     @reactive.effect
