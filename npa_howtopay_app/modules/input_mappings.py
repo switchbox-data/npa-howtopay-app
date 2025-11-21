@@ -152,7 +152,7 @@ ELECTRIC_INPUTS = {
     "electricity_generation_cost_per_kwh_init": {
         "label": "Electricity generation cost per kWh",
         "config_path": ["electric", "electricity_generation_cost_per_kwh_init"],
-        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year. This cost will grow annually by the cost inflation rate.",
+        "tooltip": "Cost per kilowatt-hour of electricity generation in the initial year. The is the utility's cost to deliver electricity and is used to estimate the utility's variable costs along with total customer usage. This cost will grow annually by the cost inflation rate.",
         "type": float,
         "min": 0
     },

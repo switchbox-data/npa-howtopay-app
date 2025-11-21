@@ -182,6 +182,9 @@ ui.page_sidebar(
         create_input_with_tooltip("npa_projects_per_year"),
         create_input_with_tooltip("num_converts_per_project"),
         create_input_with_tooltip("npa_lifetime"),
+        ui.h4("Project Energy Use Parameters"),
+        create_input_with_tooltip("per_user_heating_need_therms"),
+        create_input_with_tooltip("per_user_water_heating_need_therms"),
         ui.h4("Project Grid Parameters"),
         create_input_with_tooltip("peak_kw_summer_headroom"),
         create_input_with_tooltip("peak_kw_winter_headroom"),
@@ -191,9 +194,8 @@ ui.page_sidebar(
         create_input_with_tooltip("aircon_percent_adoption_pre_npa"),
         create_input_with_tooltip("hp_efficiency"),
         create_input_with_tooltip("water_heater_efficiency"),
-        ui.h4("Project Energy Use Parameters"),
-        create_input_with_tooltip("per_user_heating_need_therms"),
-        create_input_with_tooltip("per_user_water_heating_need_therms"),
+
+        
       ),
       ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
@@ -204,31 +206,51 @@ ui.page_sidebar(
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
+        create_input_with_tooltip("per_user_electric_need_kwh"),
         create_input_with_tooltip("scattershot_electrification_users_per_year"),
         create_input_with_tooltip("electric_user_bill_fixed_charge"),
         create_input_with_tooltip("electric_ratebase_init"),
-        create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
+        # create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
         create_input_with_tooltip("electric_ror"),
-        create_input_with_tooltip("electric_default_depreciation_lifetime"),
+        # create_input_with_tooltip("electric_default_depreciation_lifetime"),
         create_input_with_tooltip("electric_fixed_overhead_costs"),
         create_input_with_tooltip("electric_maintenance_cost_pct"),
-        ui.h4("Electric Grid Parameters"),
+        # ui.h4("Electric Grid Parameters"),
         create_input_with_tooltip("electricity_generation_cost_per_kwh_init"),
-        create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
-        create_input_with_tooltip("per_user_electric_need_kwh"),
+        # create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
+        
 
         create_input_with_tooltip("distribution_cost_per_peak_kw_increase_init"),
+        ui.accordion(
+            ui.accordion_panel(
+                ui.strong("Advanced Settings"),
+                create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
+                create_input_with_tooltip("electric_default_depreciation_lifetime"),
+                create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
+                value="elec_extra"
+            ),
+            open=False
+        ),
       ),
       ui.nav_panel("Gas", ui.h4("Gas Utility Financials"),
         create_input_with_tooltip("gas_num_users_init"),
         create_input_with_tooltip("gas_user_bill_fixed_charge"),
         create_input_with_tooltip("gas_ratebase_init"),
         create_input_with_tooltip("gas_bau_lpp_costs_per_year"),
-        create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
+        # create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
         create_input_with_tooltip("gas_ror"),
         create_input_with_tooltip("gas_fixed_overhead_costs"),
-        create_input_with_tooltip("non_lpp_depreciation_lifetime"),
+        # create_input_with_tooltip("non_lpp_depreciation_lifetime"),
         create_input_with_tooltip("gas_generation_cost_per_therm_init"),
+        ui.accordion(
+            ui.accordion_panel(
+                ui.strong("Advanced Settings"),
+                create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
+                create_input_with_tooltip("non_lpp_depreciation_lifetime"),
+                value="gas_extra"
+            ),
+            open=False
+        ),
         
       ),
       ui.nav_panel("Financials", ui.h4("Inflation"),
@@ -1081,5 +1103,24 @@ def server(input, output, session):
     @session.bookmark.on_bookmarked
     async def _(url: str):
         await session.bookmark.update_query_string(url)
+
+    # User warnings
+    @reactive.effect
+    def check_npa_hh_warning():
+        """Warn if NPA households per year exceeds initial gas users"""
+        try:
+            npa_hh_per_year = input.npa_projects_per_year() * input.num_converts_per_project()
+            gas_users_init = input.gas_num_users_init()
+            
+            if gas_users_init is not None and npa_hh_per_year is not None:
+                if npa_hh_per_year > gas_users_init:
+                    session.notification.show(
+                        f"Warning: NPA households per year ({npa_hh_per_year:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
+                        duration=10,
+                        type="warning"
+                    )
+        except (AttributeError, TypeError, Exception):
+            # Skip if inputs are not available
+            pass
 
 app = App(app_ui, server, bookmark_store="url")
