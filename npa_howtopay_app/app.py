@@ -403,12 +403,12 @@ def server(input, output, session):
     def scenario_definitions_table():
         """Render styled list of scenario definitions"""
         scenarios = [
-            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends {gas_bau_lpp_costs_per_year()} in leak-prone pipe replacement per year, affecting {lpp_hh()} households. Investment is treated as gas capex, and added to their rate base and recovered over {input.pipeline_depreciation_lifetime()} years from the year the replacement is done. Scattershot electrification still occurs."),
-            ('npa_program_desc', "Modeled NPA program:", f"Gas utility only spends {reduced_lpp_costs_per_year()} on pipeline replacement per year, for {reduced_lpp_hh()} households. The remaining {npa_hh()} get electrified instead (and their pipe is decommissioned), at a cost of {npa_costs_per_year()}. This would save ${lpp_savings_per_year()} in avoided pipeline spending compared to business as usual. But who would pay for the {npa_costs_per_year()} in NPA costs? We model 6 possible scenarios, each with their own implications for ratepayers:"),
-            ("gas_capex", "Gas Capex:", f"Gas utility pays for NPA projects as capital expenditures (added to gas ratebase and recovered over {input.npa_lifetime()} years from the year the project is done)."),
+            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends <strong>{gas_bau_lpp_costs_per_year()}</strong> in leak-prone pipe replacement per year, affecting <strong>{lpp_hh()}</strong> households. Investment is treated as gas capex, and added to their rate base and recovered over <strong>{input.pipeline_depreciation_lifetime()}</strong> years from the year the replacement is done. Scattershot electrification still occurs."),
+            ('npa_program_desc', "Modeled NPA program:", f"Gas utility only spends <strong>{reduced_lpp_costs_per_year()}</strong> on pipeline replacement per year, for <strong>{reduced_lpp_hh()}</strong> households. The remaining <strong>{npa_hh()}</strong> get electrified instead (and their pipe is decommissioned), at a cost of <strong>{npa_costs_per_year()}</strong>. This would save <strong>${lpp_savings_per_year()}</strong> in avoided pipeline spending compared to business as usual. But who would pay for the <strong>{npa_costs_per_year()}</strong> in NPA costs? We model 6 possible scenarios, each with their own implications for ratepayers:"),
+            ("gas_capex", "Gas Capex:", f"Gas utility pays for NPA projects as capital expenditures (added to gas ratebase and recovered over <strong>{input.npa_lifetime()}</strong> years from the year the project is done)."),
             ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (not added to ratebase, recovered in year incurred)."),
-            ("performance_incentive", "Performance Incentive:", f" Gas utilities would be receive alternative compensation for engaging in NPAs: they would be allowed to treat a portion of the savings as capex, recovered over {input.incentive_payback_period()} years. Savings would be defined as the net-present-value of the difference between avoided BAU costs and NPA costs."),
-            ("electric_capex", "Electric Capex:", f"Electric utility pays for NPA projects as capital expenditures (added to electric ratebase and recovered over {input.npa_lifetime()} years from the year the project is done)."),
+            ("performance_incentive", "Performance Incentive:", f" Gas utilities would receive alternative compensation for engaging in NPAs: they would be allowed to treat a portion of the savings as capex, recovered over <strong>{input.incentive_payback_period()}</strong> years. Savings would be defined as the net-present-value of the difference between avoided BAU costs and NPA costs."),
+            ("electric_capex", "Electric Capex:", f"Electric utility pays for NPA projects as capital expenditures (added to electric ratebase and recovered over <strong>{input.npa_lifetime()}</strong> years from the year the project is done)."),
             ("electric_opex", "Electric Opex:", "Electric utility pays for NPA projects as operating expenses (not added to ratebase, recovered in year incurred)."),
 
             ("taxpayer", "Taxpayer:", "All NPA costs are paid by public funds, not by utilities."),
@@ -426,21 +426,19 @@ def server(input, output, session):
                             style=f"color: {color}; font-weight: bold;"
                         ),
                         " ",
-                        description
+                         ui.HTML(description)
                     )
                 )
             else:
                 items.append(
-                  items.append(
                     ui.tags.p(
                         ui.tags.span(
                             display_name,
                             style=f"color: {color}; font-weight: bold;"
                         ),
                         " ",
-                        description
+                        ui.HTML(description)
                     )
-                )
                 )
 
         return ui.tags.div(*items)
