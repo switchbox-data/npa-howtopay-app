@@ -35,11 +35,89 @@ run_name_choices = {name: name for name in all_configs.keys()}
 default_run_name = 'test_kiki'
 config = load_defaults(default_run_name)
 
+def coerce_input_value(value, input_id, from_ui=True):
+    """
+    Coerce input value to the correct type based on input_mappings.
+    
+    Args:
+        value: The value to coerce
+        input_id: The input ID from input_mappings
+        from_ui: If True, value is from UI (0-100 for percentages) and will be converted to model format (0-1).
+                If False, value is from config/model (0-1 for percentages) and will be converted to UI format (0-100).
+    """
+    if value is None:
+        return None
+    input_data = ALL_INPUT_MAPPINGS.get(input_id, {})
+    input_type = input_data.get("type")
+    is_pct = input_data.get("is_pct", False)
+    
+    # Handle percentage conversion
+    if is_pct:
+        if from_ui:
+            # Convert from UI (0-100) to model (0-1)
+            value = float(value) / 100.0
+        else:
+            # Convert from model (0-1) to UI (0-100)
+            value = float(value) * 100.0
+    
+    if input_type is None:
+        return value
+    try:
+        if input_type == int:
+            return int(value)
+        elif input_type == float:
+            return float(value)
+        else:
+            return value
+    except (ValueError, TypeError):
+        return value
+
 def create_input_with_tooltip(input_id):
     """Create numeric input with tooltip using input mappings"""
     input_data = ALL_INPUT_MAPPINGS[input_id]
+    
+    # Get initial value from config (config files now store percentages in 0-100 format)
+    # For percentage fields, config is already in UI format (0-100), so no conversion needed
+    # For non-percentage fields, just get the value as-is
+    initial_value = get_config_value(config, input_data["config_path"])
+    is_pct = input_data.get("is_pct", False)
+    if not is_pct:
+        # For non-percentage fields, apply type coercion only
+        initial_value = coerce_input_value(initial_value, input_id, from_ui=True)
+    else:
+        # For percentage fields, config is already in 0-100 format (UI format), just coerce type
+        input_type = input_data.get("type", float)
+        if initial_value is not None:
+            try:
+                initial_value = float(initial_value) if input_type == float else int(initial_value)
+            except (ValueError, TypeError):
+                pass
+    
+    # Extract validation parameters
+    min_value = input_data.get("min")
+    max_value = input_data.get("max")
+    input_type = input_data.get("type", float)
+    
+    # Set step based on type (1 for int, None/0.01 for float)
+    step = 1 if input_type == int else None
+    
+    # Build input_numeric arguments
+    input_kwargs = {
+        "id": input_id,
+        "label": input_data["label"],
+        "value": initial_value,
+        "update_on": "blur"
+    }
+    
+    if min_value is not None:
+        input_kwargs["min"] = min_value
+    if max_value is not None:
+        input_kwargs["max"] = max_value
+    if step is not None:
+        input_kwargs["step"] = step
+    
     return ui.tooltip(
-        ui.input_numeric(input_id, input_data["label"], value=get_config_value(config, input_data["config_path"]), update_on="blur"),
+        ui.input_numeric(**input_kwargs),
         input_data["tooltip"]
     )
 
@@ -333,10 +411,85 @@ def server(input, output, session):
                 value = config
                 for key in config_path:
                     value = value[key]
+                # Apply type coercion before updating
+                # Config files now store percentages in 0-100 format (UI format), so no conversion needed
+                is_pct = input_data.get("is_pct", False)
+                if not is_pct:
+                    value = coerce_input_value(value, input_id, from_ui=True)
+                else:
+                    # For percentage fields, config is already in 0-100 format, just coerce type
+                    input_type = input_data.get("type", float)
+                    if value is not None:
+                        try:
+                            value = float(value) if input_type == float else int(value)
+                        except (ValueError, TypeError):
+                            pass
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
 
+    # Validate all inputs with min/max constraints
+    @reactive.effect
+    def validate_inputs():
+        """Validate all inputs and reset invalid values to nearest valid value"""
+        for input_id, input_data in ALL_INPUT_MAPPINGS.items():
+            min_value = input_data.get("min")
+            max_value = input_data.get("max")
+            
+            # Skip if no constraints
+            if min_value is None and max_value is None:
+                continue
+            
+            try:
+                # Get current input value using getattr to safely access input
+                input_attr = getattr(input, input_id, None)
+                if input_attr is None:
+                    continue
+                    
+                current_value = input_attr()
+                
+                # Skip if value is None
+                if current_value is None:
+                    continue
+                
+                # Check if value is out of bounds
+                needs_reset = False
+                new_value = current_value
+                
+                if min_value is not None and current_value < min_value:
+                    new_value = min_value
+                    needs_reset = True
+                elif max_value is not None and current_value > max_value:
+                    new_value = max_value
+                    needs_reset = True
+                
+                # Reset if needed
+                if needs_reset:
+                    with reactive.isolate():
+                        ui.update_numeric(input_id, value=new_value)
+                        # Show notification using session
+                        label = input_data.get("label", input_id)
+                        if min_value is not None and max_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be between {min_value} and {max_value}. Value reset to {new_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+                        elif min_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be at least {min_value}. Value reset to {min_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+                        elif max_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be at most {max_value}. Value reset to {max_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+            except (AttributeError, TypeError, Exception):
+                # Skip if input doesn't exist or can't be accessed
+                pass
         
     # Update year dropdown choices when start_year, end_year, or config changes
     # Update year dropdown choices when start_year, end_year, or config changes
@@ -344,8 +497,8 @@ def server(input, output, session):
     def update_year_choices():
         # This will trigger when current_config() changes
         config = current_config()
-        start = input.start_year()
-        end = input.end_year()
+        start = coerce_input_value(input.start_year(), "start_year")
+        end = coerce_input_value(input.end_year(), "end_year")
         if start and end:
             choices = {year: year for year in range(start, end + 1)}
             
@@ -385,8 +538,8 @@ def server(input, output, session):
     
     @render.ui
     def npa_year_range_slider():
-        start = int(input.start_year())
-        end = int(input.end_year())
+        start = coerce_input_value(input.start_year(), "start_year")
+        end = coerce_input_value(input.end_year(), "end_year")
         return ui.tooltip(
             ui.input_slider(
                 "npa_year_range", 
@@ -411,17 +564,17 @@ def server(input, output, session):
     def create_web_params():
         """Create the web parameters object for the model"""
         web_params = {
-            "npa_num_projects": input.npa_projects_per_year(),
-            "num_converts": input.num_converts_per_project(),
-            "pipe_value_per_user": float(input.pipe_value_per_user()),
+            "npa_num_projects": coerce_input_value(input.npa_projects_per_year(), "npa_projects_per_year"),
+            "num_converts": coerce_input_value(input.num_converts_per_project(), "num_converts_per_project"),
+            "pipe_value_per_user": coerce_input_value(input.pipe_value_per_user(), "pipe_value_per_user"),
             "pipe_decomm_cost_per_user": 0.0,
-            "peak_kw_winter_headroom": float(input.peak_kw_winter_headroom()),
-            "peak_kw_summer_headroom": float(input.peak_kw_summer_headroom()),
-            "aircon_percent_adoption_pre_npa": input.aircon_percent_adoption_pre_npa(),
-            "scattershot_electrification_users_per_year": input.scattershot_electrification_users_per_year(),
-            "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
-            "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
-            "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
+            "peak_kw_winter_headroom": coerce_input_value(input.peak_kw_winter_headroom(), "peak_kw_winter_headroom"),
+            "peak_kw_summer_headroom": coerce_input_value(input.peak_kw_summer_headroom(), "peak_kw_summer_headroom"),
+            "aircon_percent_adoption_pre_npa": coerce_input_value(input.aircon_percent_adoption_pre_npa(), "aircon_percent_adoption_pre_npa"),
+            "scattershot_electrification_users_per_year": coerce_input_value(input.scattershot_electrification_users_per_year(), "scattershot_electrification_users_per_year"),
+            "gas_fixed_overhead_costs": coerce_input_value(input.gas_fixed_overhead_costs(), "gas_fixed_overhead_costs"),
+            "electric_fixed_overhead_costs": coerce_input_value(input.electric_fixed_overhead_costs(), "electric_fixed_overhead_costs"),
+            "gas_bau_lpp_costs_per_year": coerce_input_value(input.gas_bau_lpp_costs_per_year(), "gas_bau_lpp_costs_per_year"),
             "npa_year_start": debounced_npa_year_range()[0],
             "npa_year_end": debounced_npa_year_range()[1],
             "is_scattershot": False,
@@ -433,18 +586,18 @@ def server(input, output, session):
     def create_gas_params():
         """Create the parameters object for the model"""
         gas_params = nhp.params.GasParams(
-            baseline_non_lpp_ratebase_growth=input.baseline_non_lpp_ratebase_growth(),
-            default_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
-            pipeline_depreciation_lifetime=input.pipeline_depreciation_lifetime(),
-            non_lpp_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
-            gas_generation_cost_per_therm_init=input.gas_generation_cost_per_therm_init(),
-            num_users_init=input.gas_num_users_init(),
-            per_user_heating_need_therms=input.per_user_heating_need_therms(),
-            per_user_water_heating_need_therms=input.per_user_water_heating_need_therms(),
-            user_bill_fixed_charge=input.gas_user_bill_fixed_charge(),
-            pipeline_maintenance_cost_pct=input.pipeline_maintenance_cost_pct(),
-            ratebase_init=input.gas_ratebase_init(),
-            ror=input.gas_ror()
+            baseline_non_lpp_ratebase_growth=coerce_input_value(input.baseline_non_lpp_ratebase_growth(), "baseline_non_lpp_ratebase_growth"),
+            default_depreciation_lifetime=coerce_input_value(input.non_lpp_depreciation_lifetime(), "non_lpp_depreciation_lifetime"),
+            pipeline_depreciation_lifetime=coerce_input_value(input.pipeline_depreciation_lifetime(), "pipeline_depreciation_lifetime"),
+            non_lpp_depreciation_lifetime=coerce_input_value(input.non_lpp_depreciation_lifetime(), "non_lpp_depreciation_lifetime"),
+            gas_generation_cost_per_therm_init=coerce_input_value(input.gas_generation_cost_per_therm_init(), "gas_generation_cost_per_therm_init"),
+            num_users_init=coerce_input_value(input.gas_num_users_init(), "gas_num_users_init"),
+            per_user_heating_need_therms=coerce_input_value(input.per_user_heating_need_therms(), "per_user_heating_need_therms"),
+            per_user_water_heating_need_therms=coerce_input_value(input.per_user_water_heating_need_therms(), "per_user_water_heating_need_therms"),
+            user_bill_fixed_charge=coerce_input_value(input.gas_user_bill_fixed_charge(), "gas_user_bill_fixed_charge"),
+            pipeline_maintenance_cost_pct=coerce_input_value(input.pipeline_maintenance_cost_pct(), "pipeline_maintenance_cost_pct"),
+            ratebase_init=coerce_input_value(input.gas_ratebase_init(), "gas_ratebase_init"),
+            ror=coerce_input_value(input.gas_ror(), "gas_ror")
         )
         return gas_params
         
@@ -453,21 +606,21 @@ def server(input, output, session):
     def create_electric_params():
         """Create the parameters object for the model"""
         electric_params = nhp.params.ElectricParams(
-            aircon_peak_kw=input.aircon_peak_kw(),  # peak energy consumption of a household airconditioning unit
-            baseline_non_npa_ratebase_growth=input.baseline_non_npa_ratebase_growth(),
-            default_depreciation_lifetime=input.electric_default_depreciation_lifetime(),
-            grid_upgrade_depreciation_lifetime=input.grid_upgrade_depreciation_lifetime(),
-            distribution_cost_per_peak_kw_increase_init=input.distribution_cost_per_peak_kw_increase_init(),
-            electric_maintenance_cost_pct=input.electric_maintenance_cost_pct(),
-            electricity_generation_cost_per_kwh_init=input.electricity_generation_cost_per_kwh_init(),
-            hp_efficiency=input.hp_efficiency(),
-            water_heater_efficiency=input.water_heater_efficiency(),
-            hp_peak_kw=input.hp_peak_kw(),
-            num_users_init=input.electric_num_users_init(),
-            per_user_electric_need_kwh=input.per_user_electric_need_kwh(),
-            ratebase_init=input.electric_ratebase_init(),
-            user_bill_fixed_charge=input.electric_user_bill_fixed_charge(),
-            ror=input.electric_ror()
+            aircon_peak_kw=coerce_input_value(input.aircon_peak_kw(), "aircon_peak_kw"),  # peak energy consumption of a household airconditioning unit
+            baseline_non_npa_ratebase_growth=coerce_input_value(input.baseline_non_npa_ratebase_growth(), "baseline_non_npa_ratebase_growth"),
+            default_depreciation_lifetime=coerce_input_value(input.electric_default_depreciation_lifetime(), "electric_default_depreciation_lifetime"),
+            grid_upgrade_depreciation_lifetime=coerce_input_value(input.grid_upgrade_depreciation_lifetime(), "grid_upgrade_depreciation_lifetime"),
+            distribution_cost_per_peak_kw_increase_init=coerce_input_value(input.distribution_cost_per_peak_kw_increase_init(), "distribution_cost_per_peak_kw_increase_init"),
+            electric_maintenance_cost_pct=coerce_input_value(input.electric_maintenance_cost_pct(), "electric_maintenance_cost_pct"),
+            electricity_generation_cost_per_kwh_init=coerce_input_value(input.electricity_generation_cost_per_kwh_init(), "electricity_generation_cost_per_kwh_init"),
+            hp_efficiency=coerce_input_value(input.hp_efficiency(), "hp_efficiency"),
+            water_heater_efficiency=coerce_input_value(input.water_heater_efficiency(), "water_heater_efficiency"),
+            hp_peak_kw=coerce_input_value(input.hp_peak_kw(), "hp_peak_kw"),
+            num_users_init=coerce_input_value(input.electric_num_users_init(), "electric_num_users_init"),
+            per_user_electric_need_kwh=coerce_input_value(input.per_user_electric_need_kwh(), "per_user_electric_need_kwh"),
+            ratebase_init=coerce_input_value(input.electric_ratebase_init(), "electric_ratebase_init"),
+            user_bill_fixed_charge=coerce_input_value(input.electric_user_bill_fixed_charge(), "electric_user_bill_fixed_charge"),
+            ror=coerce_input_value(input.electric_ror(), "electric_ror")
         )
         return electric_params
 
@@ -476,15 +629,15 @@ def server(input, output, session):
     def create_shared_params():
         """Create the parameters object for the model"""
         shared_params = nhp.params.SharedParams(
-            cost_inflation_rate=input.cost_inflation_rate(), 
-            real_dollar_discount_rate=input.real_dollar_discount_rate(), 
-            npv_discount_rate=input.npv_discount_rate(),
-            performance_incentive_pct=input.performance_incentive_pct(),
-            incentive_payback_period=input.incentive_payback_period(),
-            construction_inflation_rate=input.construction_inflation_rate(),
-            npa_install_costs_init=input.npa_install_costs_init(),
-            npa_lifetime=input.npa_lifetime(), 
-            start_year=input.start_year()
+            cost_inflation_rate=coerce_input_value(input.cost_inflation_rate(), "cost_inflation_rate"), 
+            real_dollar_discount_rate=coerce_input_value(input.real_dollar_discount_rate(), "real_dollar_discount_rate"), 
+            npv_discount_rate=coerce_input_value(input.npv_discount_rate(), "npv_discount_rate"),
+            performance_incentive_pct=coerce_input_value(input.performance_incentive_pct(), "performance_incentive_pct"),
+            incentive_payback_period=coerce_input_value(input.incentive_payback_period(), "incentive_payback_period"),
+            construction_inflation_rate=coerce_input_value(input.construction_inflation_rate(), "construction_inflation_rate"),
+            npa_install_costs_init=coerce_input_value(input.npa_install_costs_init(), "npa_install_costs_init"),
+            npa_lifetime=coerce_input_value(input.npa_lifetime(), "npa_lifetime"), 
+            start_year=coerce_input_value(input.start_year(), "start_year")
         )
         return shared_params
     @reactive.calc
@@ -503,16 +656,16 @@ def server(input, output, session):
     def create_ts_inputs():
         """Create the time series inputs for the model"""
         web_params = create_web_params()
-        start_year = input.start_year()
-        end_year = input.end_year()
+        start_year = coerce_input_value(input.start_year(), "start_year")
+        end_year = coerce_input_value(input.end_year(), "end_year")
         return nhp.params.load_time_series_params_from_web_params(web_params, start_year, end_year+1)
     
     @reactive.calc
     @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_scenario_runs():
         """Create the scenario parameters for the model"""
-        start_year = input.start_year()
-        end_year = input.end_year()
+        start_year = coerce_input_value(input.start_year(), "start_year")
+        end_year = coerce_input_value(input.end_year(), "end_year")
         return nhp.model.create_scenario_runs(start_year, end_year+1, ["gas", "electric"], ["capex", "opex"])
 
     # MODEL FUNCTIONS
