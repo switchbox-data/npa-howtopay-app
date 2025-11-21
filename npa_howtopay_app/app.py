@@ -1108,19 +1108,20 @@ def server(input, output, session):
     @reactive.effect
     def check_npa_hh_warning():
         """Warn if NPA households per year exceeds initial gas users"""
-        try:
-            npa_hh_per_year = input.npa_projects_per_year() * input.num_converts_per_project()
-            gas_users_init = input.gas_num_users_init()
+        # Access inputs to establish reactive dependencies
+        npa_projects = input.npa_projects_per_year()
+        num_converts = input.num_converts_per_project()
+        gas_users_init = input.gas_num_users_init()
+        
+        # Only check if all values are valid (not None)
+        if (npa_projects is not None and num_converts is not None and gas_users_init is not None):
+            npa_hh_per_year = npa_projects * num_converts
             
-            if gas_users_init is not None and npa_hh_per_year is not None:
-                if npa_hh_per_year > gas_users_init:
-                    session.notification.show(
-                        f"Warning: NPA households per year ({npa_hh_per_year:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
-                        duration=10,
-                        type="warning"
-                    )
-        except (AttributeError, TypeError, Exception):
-            # Skip if inputs are not available
-            pass
+            if npa_hh_per_year > gas_users_init:
+                ui.notification_show(
+                    f"Warning: NPA households per year ({npa_hh_per_year:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
+                    duration=10,
+                    type="warning"
+                )
 
 app = App(app_ui, server, bookmark_store="url")
