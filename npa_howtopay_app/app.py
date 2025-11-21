@@ -252,7 +252,7 @@ ui.page_sidebar(
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
-        ui.p("Welcome to the NPA How to Pay app! This model is best used to explore the relative impact of different NPA scenarios on utility financials and delivery bills. This is not a complete model of utility operations and we do not model supply side variables. It is intended to be a tool for exploring the relative direction and magnitude of different NPA scenarios on utility financials and delivery bills. The default view presents the results as a difference from the Business as Usual (BAU) scenario where no NPA projects are implemented (See Scenario Descriptions below). For more information on the underlying model, see the",
+        ui.p("Welcome to the NPA How to Pay app! This model explores the relative impact (magnitude and direction) of different NPA scenarios on utility financials and delivery bills. This is not a complete model of utility operations and we do not model supply side variables. The default view presents the results as a difference from the Business as Usual (BAU) scenario (See Scenario Descriptions below). For more information on the underlying model, see the",
         ui.tags.a(" NPA How to Pay documentation.", href="https://switchbox-data.github.io/npa-howtopay/", target="_blank"),
         ".", ui.br(),ui.br(), "Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results."
     ),
@@ -596,13 +596,14 @@ def server(input, output, session):
     def npa_year_range_slider():
         start = coerce_input_value(input.start_year(), "start_year")
         end = coerce_input_value(input.end_year(), "end_year")
+        default = [start, min(end, start + 10)]
         return ui.tooltip(
             ui.input_slider(
                 "npa_year_range", 
                 "NPA year range", 
                 min=start, 
                 max=end, 
-                value=[start, end],
+                value=default,
                 step=1,
                 sep=""
             ),
