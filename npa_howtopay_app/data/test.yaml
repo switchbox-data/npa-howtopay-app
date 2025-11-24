@@ -11,10 +11,10 @@ gas:
   num_users_init: 1e6  # initial number of gas users
   per_user_heating_need_therms: 800.0  # household annual heating need in therms
   per_user_water_heating_need_therms: 100.0  # household annual water heating need in therms
-  pipeline_maintenance_cost_pct: 0.04  # yearly opex as a perecent of existing ratebase value (not including npas)
+  pipeline_maintenance_cost_pct: 4.0  # yearly opex as a perecent of existing ratebase value (not including npas)
   user_bill_fixed_charge: 120
   ratebase_init: 8.0e9 # intitial ratebase
-  ror: 0.08  # gas utility return on capital
+  ror: 8.0  # gas utility return on capital
 
 
 electric:
@@ -23,7 +23,7 @@ electric:
   default_depreciation_lifetime: 50 # depreciation lifetime for all projects, used for synthetic initial capex projects and new non-npa projects
   grid_upgrade_depreciation_lifetime: 55 # depreciation lifetime for grid upgrades
   distribution_cost_per_peak_kw_increase_init: 100.0 # cost to increase grid capacity to support one additional kw of peak demand, in initial year of model
-  electric_maintenance_cost_pct: 0.04 # yearly opex as a perecent of existing ratebase value (not including npas)
+  electric_maintenance_cost_pct: 4.0 # yearly opex as a perecent of existing ratebase value (not including npas)
   electricity_generation_cost_per_kwh_init: 0.005 # cost per kwh of electricity generation (just the generation cost), in initial year of model
   water_heater_efficiency: 3 # water heater efficiency
   hp_efficiency: 4 # hp heating efficiency
@@ -32,16 +32,16 @@ electric:
   per_user_electric_need_kwh: 10.0e3 # per user annual electricity need in kwh
   ratebase_init: 25.0e9 # intitial ratebase
   user_bill_fixed_charge: 240 # annual fixed charge per customer ($)
-  ror: 0.08 # electric utility return on capital
+  ror: 8.0 # electric utility return on capital
 
 
 
 shared:
-  cost_inflation_rate: 0.01 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
-  construction_inflation_rate: 0.01 # rate at which construction expenses grow from init value; applies to non-lpp and grid upgrade capex projects
-  real_dollar_discount_rate: 0.03 #  # Converts nominal to real dollars. discount rate for converting future revenue requirements and bills into today's dollars
-  npv_discount_rate: 0.05 # Calculates NPV of investments. real discount rate for calculating net present value of capex projects (used for performance incentive scenario)
-  performance_incentive_pct: 0.3 # percentage of savings (avoided LPP spending) on which gas utility receives a performance incentive (used for performance incentive scenario)
+  cost_inflation_rate: 1.0 # rate at which expenses grow from init value; applies to generation_costs, npa_install_costs, and grid upgrade costs
+  construction_inflation_rate: 1.0 # rate at which construction expenses grow from init value; applies to non-lpp and grid upgrade capex projects
+  real_dollar_discount_rate: 3.0 #  # Converts nominal to real dollars. discount rate for converting future revenue requirements and bills into today's dollars
+  npv_discount_rate: 5.0 # Calculates NPV of investments. real discount rate for calculating net present value of capex projects (used for performance incentive scenario)
+  performance_incentive_pct: 30.0 # percentage of savings (avoided LPP spending) on which gas utility receives a performance incentive (used for performance incentive scenario)
   incentive_payback_period: 10 # number of years to pay incentives (used for performance incentive scenario)
   npa_install_costs_init: 20.0e3 # cost of installing one npa per household, in initial year of model
   npa_lifetime: 15 # average lifetime of an installed npa
@@ -55,7 +55,7 @@ npa:
   num_converts_per_project: 500
   peak_kw_summer_headroom: 1500.0
   peak_kw_winter_headroom: 2000.0
-  aircon_percent_adoption_pre_npa: 0.50  # percentage of households that already have air conditioning before NPA
+  aircon_percent_adoption_pre_npa: 50.0  # percentage of households that already have air conditioning before NPA
   npa_year_start: 2025 # year NPA projects start
   npa_year_end: 2050 # year NPA projects end
 

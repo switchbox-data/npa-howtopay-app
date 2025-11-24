@@ -20,7 +20,7 @@
   },
   "files": {
     "requirements.txt": {
-      "checksum": "4e37cb89ab73cbafcfef00e9bff0938f"
+      "checksum": "1a2c30f3889a60c2f84dbbea0b439f34"
     },
     ".DS_Store": {
       "checksum": "bb1bbb6ae285b9fe560de2b849e729a2"
@@ -47,19 +47,19 @@
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
     },
     "npa_howtopay_app/__pycache__/app.cpython-313.pyc": {
-      "checksum": "2259215f32b4e76674df8f6db80af969"
+      "checksum": "dd04b256e00dd838215703c82e291753"
     },
     "npa_howtopay_app/__pycache__/ratelimit.cpython-313.pyc": {
       "checksum": "57b2b7928fe7f4167563843b65928f47"
     },
     "npa_howtopay_app/app.py": {
-      "checksum": "1157edc59f8c576207333f25de6a4091"
+      "checksum": "173119d7d08701c997bd3be68990250e"
     },
     "npa_howtopay_app/data/test.yaml": {
-      "checksum": "4b9df9f63aa7d76b71e65109fcd69c24"
+      "checksum": "9c5c78b68f3cd86f9959ec69c8dcd005"
     },
     "npa_howtopay_app/data/test_kiki.yaml": {
-      "checksum": "ea3fc241f0a388af83aadfcf42fa2574"
+      "checksum": "548d83265e8c48c6e5f438d5841cf242"
     },
     "npa_howtopay_app/modules/__init__.py": {
       "checksum": "d41d8cd98f00b204e9800998ecf8427e"
@@ -71,7 +71,7 @@
       "checksum": "8b03b20508395147adae42d1bf57a646"
     },
     "npa_howtopay_app/modules/__pycache__/input_mappings.cpython-313.pyc": {
-      "checksum": "6d2c64fed1bc41473129c43c4e4669aa"
+      "checksum": "74031dfe85b94be05ca953031cb0768b"
     },
     "npa_howtopay_app/modules/__pycache__/plotting.cpython-313.pyc": {
       "checksum": "f01e58249453d372b5a138f921320b70"
@@ -80,7 +80,7 @@
       "checksum": "4df016fb54ae3864ef44d3e093c23ab4"
     },
     "npa_howtopay_app/modules/input_mappings.py": {
-      "checksum": "fde48e9a9df6e12e45cb2a3d983921e5"
+      "checksum": "85ceb94df43556bea2472933a73a12d0"
     },
     "npa_howtopay_app/modules/plotting.py": {
       "checksum": "c0f8af57978e2fc73fc03da703410dd7"
@@ -101,7 +101,7 @@
       "checksum": "b2e714917a45416af71ad2b0c04c3eba"
     },
     "uv.lock": {
-      "checksum": "1757358e02c3d0dec5259f006d72c248"
+      "checksum": "6aa495283cde7d4da77a6ad52f29930c"
     }
   }
 }

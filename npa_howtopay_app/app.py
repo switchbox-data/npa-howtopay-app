@@ -1,8 +1,10 @@
+from typing import Any
 import plotly.express as px
 import polars as pl
 from pathlib import Path
 import tempfile
 import io
+import zipfile
 from shinywidgets import output_widget, render_plotly
 from shiny import App, reactive, render, ui, req
 import npa_howtopay as nhp
@@ -35,11 +37,89 @@ run_name_choices = {name: name for name in all_configs.keys()}
 default_run_name = 'test_kiki'
 config = load_defaults(default_run_name)
 
+def coerce_input_value(value, input_id, from_ui=True):
+    """
+    Coerce input value to the correct type based on input_mappings.
+    
+    Args:
+        value: The value to coerce
+        input_id: The input ID from input_mappings
+        from_ui: If True, value is from UI (0-100 for percentages) and will be converted to model format (0-1).
+                If False, value is from config/model (0-1 for percentages) and will be converted to UI format (0-100).
+    """
+    if value is None:
+        return None
+    input_data = ALL_INPUT_MAPPINGS.get(input_id, {})
+    input_type = input_data.get("type")
+    is_pct = input_data.get("is_pct", False)
+    
+    # Handle percentage conversion
+    if is_pct:
+        if from_ui:
+            # Convert from UI (0-100) to model (0-1)
+            value = float(value) / 100.0
+        else:
+            # Convert from model (0-1) to UI (0-100)
+            value = float(value) * 100.0
+    
+    if input_type is None:
+        return value
+    try:
+        if input_type == int:
+            return int(value)
+        elif input_type == float:
+            return float(value)
+        else:
+            return value
+    except (ValueError, TypeError):
+        return value
+
 def create_input_with_tooltip(input_id):
     """Create numeric input with tooltip using input mappings"""
     input_data = ALL_INPUT_MAPPINGS[input_id]
+    
+    # Get initial value from config (config files now store percentages in 0-100 format)
+    # For percentage fields, config is already in UI format (0-100), so no conversion needed
+    # For non-percentage fields, just get the value as-is
+    initial_value = get_config_value(config, input_data["config_path"])
+    is_pct = input_data.get("is_pct", False)
+    if not is_pct:
+        # For non-percentage fields, apply type coercion only
+        initial_value = coerce_input_value(initial_value, input_id, from_ui=True)
+    else:
+        # For percentage fields, config is already in 0-100 format (UI format), just coerce type
+        input_type = input_data.get("type", float)
+        if initial_value is not None:
+            try:
+                initial_value = float(initial_value) if input_type == float else int(initial_value)
+            except (ValueError, TypeError):
+                pass
+    
+    # Extract validation parameters
+    min_value = input_data.get("min")
+    max_value = input_data.get("max")
+    input_type = input_data.get("type", float)
+    
+    # Set step based on type (1 for int, None/0.01 for float)
+    step = 1 if input_type == int else None
+    
+    # Build input_numeric arguments
+    input_kwargs = {
+        "id": input_id,
+        "label": input_data["label"],
+        "value": initial_value,
+        "update_on": "blur"
+    }
+    
+    if min_value is not None:
+        input_kwargs["min"] = min_value
+    if max_value is not None:
+        input_kwargs["max"] = max_value
+    if step is not None:
+        input_kwargs["step"] = step
+    
     return ui.tooltip(
-        ui.input_numeric(input_id, input_data["label"], value=get_config_value(config, input_data["config_path"]), update_on="blur"),
+        ui.input_numeric(**input_kwargs),
         input_data["tooltip"]
     )
 
@@ -102,6 +182,9 @@ ui.page_sidebar(
         create_input_with_tooltip("npa_projects_per_year"),
         create_input_with_tooltip("num_converts_per_project"),
         create_input_with_tooltip("npa_lifetime"),
+        ui.h4("Project Energy Use Parameters"),
+        create_input_with_tooltip("per_user_heating_need_therms"),
+        create_input_with_tooltip("per_user_water_heating_need_therms"),
         ui.h4("Project Grid Parameters"),
         create_input_with_tooltip("peak_kw_summer_headroom"),
         create_input_with_tooltip("peak_kw_winter_headroom"),
@@ -111,9 +194,8 @@ ui.page_sidebar(
         create_input_with_tooltip("aircon_percent_adoption_pre_npa"),
         create_input_with_tooltip("hp_efficiency"),
         create_input_with_tooltip("water_heater_efficiency"),
-        ui.h4("Project Energy Use Parameters"),
-        create_input_with_tooltip("per_user_heating_need_therms"),
-        create_input_with_tooltip("per_user_water_heating_need_therms"),
+
+        
       ),
       ui.nav_panel("Pipeline", ui.h4("Pipeline Economics"),
         # Pipeline Economics inputs
@@ -124,31 +206,51 @@ ui.page_sidebar(
       ),
       ui.nav_panel("Electric", ui.h4("Electric Utility Financials"),
         create_input_with_tooltip("electric_num_users_init"),
+        create_input_with_tooltip("per_user_electric_need_kwh"),
         create_input_with_tooltip("scattershot_electrification_users_per_year"),
         create_input_with_tooltip("electric_user_bill_fixed_charge"),
         create_input_with_tooltip("electric_ratebase_init"),
-        create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
+        # create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
         create_input_with_tooltip("electric_ror"),
-        create_input_with_tooltip("electric_default_depreciation_lifetime"),
+        # create_input_with_tooltip("electric_default_depreciation_lifetime"),
         create_input_with_tooltip("electric_fixed_overhead_costs"),
         create_input_with_tooltip("electric_maintenance_cost_pct"),
-        ui.h4("Electric Grid Parameters"),
+        # ui.h4("Electric Grid Parameters"),
         create_input_with_tooltip("electricity_generation_cost_per_kwh_init"),
-        create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
-        create_input_with_tooltip("per_user_electric_need_kwh"),
+        # create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
+        
 
         create_input_with_tooltip("distribution_cost_per_peak_kw_increase_init"),
+        ui.accordion(
+            ui.accordion_panel(
+                ui.strong("Advanced Settings"),
+                create_input_with_tooltip("grid_upgrade_depreciation_lifetime"),
+                create_input_with_tooltip("electric_default_depreciation_lifetime"),
+                create_input_with_tooltip("baseline_non_npa_ratebase_growth"),
+                value="elec_extra"
+            ),
+            open=False
+        ),
       ),
       ui.nav_panel("Gas", ui.h4("Gas Utility Financials"),
         create_input_with_tooltip("gas_num_users_init"),
         create_input_with_tooltip("gas_user_bill_fixed_charge"),
         create_input_with_tooltip("gas_ratebase_init"),
         create_input_with_tooltip("gas_bau_lpp_costs_per_year"),
-        create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
+        # create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
         create_input_with_tooltip("gas_ror"),
         create_input_with_tooltip("gas_fixed_overhead_costs"),
-        create_input_with_tooltip("non_lpp_depreciation_lifetime"),
+        # create_input_with_tooltip("non_lpp_depreciation_lifetime"),
         create_input_with_tooltip("gas_generation_cost_per_therm_init"),
+        ui.accordion(
+            ui.accordion_panel(
+                ui.strong("Advanced Settings"),
+                create_input_with_tooltip("baseline_non_lpp_ratebase_growth"),
+                create_input_with_tooltip("non_lpp_depreciation_lifetime"),
+                value="gas_extra"
+            ),
+            open=False
+        ),
         
       ),
       ui.nav_panel("Financials", ui.h4("Inflation"),
@@ -172,9 +274,9 @@ ui.page_sidebar(
   ui.layout_columns(
     ui.card(
       ui.layout_columns(
-        ui.p("Welcome to the NPA How to Pay app! Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results. For more information on the underlying model, see the",
+        ui.p("Welcome to the NPA How to Pay app! This model explores the relative impact (magnitude and direction) of different NPA scenarios on utility financials and delivery bills. This is not a complete model of utility operations and we do not model supply side variables. The default view presents the results as a difference from the Business as Usual (BAU) scenario (See Scenario Descriptions below). For more information on the underlying model, see the",
         ui.tags.a(" NPA How to Pay documentation.", href="https://switchbox-data.github.io/npa-howtopay/", target="_blank"),
-        "."
+        ".", ui.br(),ui.br(), "Use the sidebar to select a scenario, this will populate default parameter values you can modify to fit your needs. Once you have input the values you want, click the Run Model button to run the model and plot the results."
     ),
       ),
       ui.layout_columns(
@@ -189,11 +291,11 @@ ui.page_sidebar(
       ),
         ui.accordion(
             ui.accordion_panel(
-                ui.strong("Scenario Definitions:"),
+                ui.strong("Scenario Descriptions:"),
                 ui.output_ui("scenario_definitions_table"),
                 value="scenario_definitions"
             ),
-            open=False
+            open=True
         ),
 
                ui.layout_columns(
@@ -280,33 +382,87 @@ ui.page_sidebar(
 
 def server(input, output, session):
     """Server function for the Shiny app."""
+
+    # INSERT_YOUR_CODE
+    @reactive.calc
+    def lpp_hh():
+        value = round(input.gas_bau_lpp_costs_per_year() / input.pipe_value_per_user())
+        return f"{value:,}"
+
+    @reactive.calc
+    def reduced_lpp_costs_per_year():
+        value = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"${int(value)/1e6:.0f}M"
+    
+    @reactive.calc
+    def reduced_lpp_hh():
+        reduced_costs = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        value = round(reduced_costs / input.pipe_value_per_user())
+        return f"{value:,}"
+
+    @reactive.calc
+    def npa_hh():
+        value = input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"{value:,}"
+
+    @reactive.calc
+    def npa_costs_per_year():
+        value = input.npa_install_costs_init()*input.npa_projects_per_year()*input.num_converts_per_project()
+        return f"${int(value)/1e6:.0f}M"
+    
+    @reactive.calc
+    def gas_bau_lpp_costs_per_year():
+        value = input.gas_bau_lpp_costs_per_year()
+        return f"${int(value)/1e6:.0f}M"
+
+    @reactive.calc
+    def lpp_savings_per_year():
+        bau_costs = input.gas_bau_lpp_costs_per_year()
+        reduced_costs = input.gas_bau_lpp_costs_per_year() - input.pipe_value_per_user()*input.npa_projects_per_year()*input.num_converts_per_project()
+        value = int(bau_costs) - int(reduced_costs)
+        return f"{value/1e6:.0f}M"
+
     @render.ui
     def scenario_definitions_table():
         """Render styled list of scenario definitions"""
         scenarios = [
-            ("bau", "Business-as-usual (BAU):", "No NPA projects, baseline utility costs and spending. Scattershot electrification still occurs."),
+            ("bau", "Business-as-usual (BAU):", f"No NPA projects, baseline utility costs and spending. Gas utility spends <strong>{gas_bau_lpp_costs_per_year()}</strong> in leak-prone pipe replacement, affecting <strong>{lpp_hh()}</strong> households per year. Investment is treated as gas capex, and added to their rate base and recovered over <strong>{input.pipeline_depreciation_lifetime()}</strong> years from the year the replacement is done. Scattershot electrification still occurs."),
+            ('npa_program_desc', "Modeled NPA program:", f"Gas utility only spends <strong>{reduced_lpp_costs_per_year()}</strong> on pipeline replacement for <strong>{reduced_lpp_hh()}</strong> households per year. The remaining <strong>{npa_hh()}</strong> get electrified instead (and their pipe is decommissioned), at a cost of <strong>{npa_costs_per_year()}</strong>. This would save <strong>${lpp_savings_per_year()}</strong> in avoided pipeline spending compared to business as usual. But who would pay for the <strong>{npa_costs_per_year()}</strong> in NPA costs? We model 6 possible scenarios, each with their own implications for ratepayers:"),
+            ("gas_capex", "Gas Capex:", f"Gas utility pays for NPA projects as capital expenditures (added to gas ratebase and recovered over <strong>{input.npa_lifetime()}</strong> years from the year the project is done)."),
+            ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (not added to ratebase, recovered in year incurred)."),
+            ("performance_incentive", "Performance Incentive:", f" Gas utilities would receive alternative compensation for engaging in NPAs: they would be allowed to treat a portion of the savings as capex, recovered over <strong>{input.incentive_payback_period()}</strong> years. Savings would be defined as the net-present-value of the difference between avoided BAU costs and NPA costs."),
+            ("electric_capex", "Electric Capex:", f"Electric utility pays for NPA projects as capital expenditures (added to electric ratebase and recovered over <strong>{input.npa_lifetime()}</strong> years from the year the project is done)."),
+            ("electric_opex", "Electric Opex:", "Electric utility pays for NPA projects as operating expenses (not added to ratebase, recovered in year incurred)."),
+
             ("taxpayer", "Taxpayer:", "All NPA costs are paid by public funds, not by utilities."),
-            ("gas_capex", "Gas Capex:", "Gas utility pays for NPA projects as capital expenditures (added to gas ratebase)."),
-            ("gas_opex", "Gas Opex:", "Gas utility pays for NPA projects as operating expenses (expensed in year incurred)."),
-            ("electric_capex", "Electric Capex:", "Electric utility pays for NPA projects as capital expenditures (added to electric ratebase)."),
-            ("electric_opex", "Electric Opex:", "Electric utility pays for NPA projects as operating expenses (expensed in year incurred)."),
-            ("performance_incentive", "Performance Incentive:", "Cost savings are calculated as the NPV difference between avoided BAU costs and NPA costs. A percentage of savings are recovered by the gas utility as capex over 10 years")
         ]
 
         items = []
         for color_key, display_name, description in scenarios:
             color = switchbox_colors.get(color_key, '#000000')
-            items.append(
-                ui.tags.p(
-                    "- ",
-                    ui.tags.span(
-                        display_name,
-                        style=f"color: {color}; font-weight: bold;"
-                    ),
-                    " ",
-                    description
+            if color_key not in ['npa_program_desc', 'bau']:
+                items.append(
+                    ui.tags.p(
+                        "     - ",
+                        ui.tags.span(
+                            display_name,
+                            style=f"color: {color}; font-weight: bold;"
+                        ),
+                        " ",
+                         ui.HTML(description)
+                    )
                 )
-            )
+            else:
+                items.append(
+                    ui.tags.p(
+                        ui.tags.span(
+                            display_name,
+                            style=f"color: {color}; font-weight: bold;"
+                        ),
+                        " ",
+                        ui.HTML(description)
+                    )
+                )
 
         return ui.tags.div(*items)
 
@@ -333,10 +489,85 @@ def server(input, output, session):
                 value = config
                 for key in config_path:
                     value = value[key]
+                # Apply type coercion before updating
+                # Config files now store percentages in 0-100 format (UI format), so no conversion needed
+                is_pct = input_data.get("is_pct", False)
+                if not is_pct:
+                    value = coerce_input_value(value, input_id, from_ui=True)
+                else:
+                    # For percentage fields, config is already in 0-100 format, just coerce type
+                    input_type = input_data.get("type", float)
+                    if value is not None:
+                        try:
+                            value = float(value) if input_type == float else int(value)
+                        except (ValueError, TypeError):
+                            pass
                 ui.update_numeric(input_id, value=value)
             except KeyError:
                 pass  # Skip if path doesn't exist
 
+    # Validate all inputs with min/max constraints
+    @reactive.effect
+    def validate_inputs():
+        """Validate all inputs and reset invalid values to nearest valid value"""
+        for input_id, input_data in ALL_INPUT_MAPPINGS.items():
+            min_value = input_data.get("min")
+            max_value = input_data.get("max")
+            
+            # Skip if no constraints
+            if min_value is None and max_value is None:
+                continue
+            
+            try:
+                # Get current input value using getattr to safely access input
+                input_attr = getattr(input, input_id, None)
+                if input_attr is None:
+                    continue
+                    
+                current_value = input_attr()
+                
+                # Skip if value is None
+                if current_value is None:
+                    continue
+                
+                # Check if value is out of bounds
+                needs_reset = False
+                new_value = current_value
+                
+                if min_value is not None and current_value < min_value:
+                    new_value = min_value
+                    needs_reset = True
+                elif max_value is not None and current_value > max_value:
+                    new_value = max_value
+                    needs_reset = True
+                
+                # Reset if needed
+                if needs_reset:
+                    with reactive.isolate():
+                        ui.update_numeric(input_id, value=new_value)
+                        # Show notification using session
+                        label = input_data.get("label", input_id)
+                        if min_value is not None and max_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be between {min_value} and {max_value}. Value reset to {new_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+                        elif min_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be at least {min_value}. Value reset to {min_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+                        elif max_value is not None:
+                            session.notification.show(
+                                f"'{label}' must be at most {max_value}. Value reset to {max_value}.",
+                                duration=3,
+                                type="warning"
+                            )
+            except (AttributeError, TypeError, Exception):
+                # Skip if input doesn't exist or can't be accessed
+                pass
         
     # Update year dropdown choices when start_year, end_year, or config changes
     # Update year dropdown choices when start_year, end_year, or config changes
@@ -344,8 +575,8 @@ def server(input, output, session):
     def update_year_choices():
         # This will trigger when current_config() changes
         config = current_config()
-        start = input.start_year()
-        end = input.end_year()
+        start = coerce_input_value(input.start_year(), "start_year")
+        end = coerce_input_value(input.end_year(), "end_year")
         if start and end:
             choices = {year: year for year in range(start, end + 1)}
             
@@ -385,15 +616,16 @@ def server(input, output, session):
     
     @render.ui
     def npa_year_range_slider():
-        start = int(input.start_year())
-        end = int(input.end_year())
+        start = coerce_input_value(input.start_year(), "start_year")
+        end = coerce_input_value(input.end_year(), "end_year")
+        default = [start, min(end, start + 10)]
         return ui.tooltip(
             ui.input_slider(
                 "npa_year_range", 
                 "NPA year range", 
                 min=start, 
                 max=end, 
-                value=[start, end],
+                value=default,
                 step=1,
                 sep=""
             ),
@@ -411,17 +643,17 @@ def server(input, output, session):
     def create_web_params():
         """Create the web parameters object for the model"""
         web_params = {
-            "npa_num_projects": input.npa_projects_per_year(),
-            "num_converts": input.num_converts_per_project(),
-            "pipe_value_per_user": float(input.pipe_value_per_user()),
+            "npa_num_projects": coerce_input_value(input.npa_projects_per_year(), "npa_projects_per_year"),
+            "num_converts": coerce_input_value(input.num_converts_per_project(), "num_converts_per_project"),
+            "pipe_value_per_user": coerce_input_value(input.pipe_value_per_user(), "pipe_value_per_user"),
             "pipe_decomm_cost_per_user": 0.0,
-            "peak_kw_winter_headroom": float(input.peak_kw_winter_headroom()),
-            "peak_kw_summer_headroom": float(input.peak_kw_summer_headroom()),
-            "aircon_percent_adoption_pre_npa": input.aircon_percent_adoption_pre_npa(),
-            "scattershot_electrification_users_per_year": input.scattershot_electrification_users_per_year(),
-            "gas_fixed_overhead_costs": input.gas_fixed_overhead_costs(),
-            "electric_fixed_overhead_costs": input.electric_fixed_overhead_costs(),
-            "gas_bau_lpp_costs_per_year": input.gas_bau_lpp_costs_per_year(),
+            "peak_kw_winter_headroom": coerce_input_value(input.peak_kw_winter_headroom(), "peak_kw_winter_headroom"),
+            "peak_kw_summer_headroom": coerce_input_value(input.peak_kw_summer_headroom(), "peak_kw_summer_headroom"),
+            "aircon_percent_adoption_pre_npa": coerce_input_value(input.aircon_percent_adoption_pre_npa(), "aircon_percent_adoption_pre_npa"),
+            "scattershot_electrification_users_per_year": coerce_input_value(input.scattershot_electrification_users_per_year(), "scattershot_electrification_users_per_year"),
+            "gas_fixed_overhead_costs": coerce_input_value(input.gas_fixed_overhead_costs(), "gas_fixed_overhead_costs"),
+            "electric_fixed_overhead_costs": coerce_input_value(input.electric_fixed_overhead_costs(), "electric_fixed_overhead_costs"),
+            "gas_bau_lpp_costs_per_year": coerce_input_value(input.gas_bau_lpp_costs_per_year(), "gas_bau_lpp_costs_per_year"),
             "npa_year_start": debounced_npa_year_range()[0],
             "npa_year_end": debounced_npa_year_range()[1],
             "is_scattershot": False,
@@ -433,18 +665,18 @@ def server(input, output, session):
     def create_gas_params():
         """Create the parameters object for the model"""
         gas_params = nhp.params.GasParams(
-            baseline_non_lpp_ratebase_growth=input.baseline_non_lpp_ratebase_growth(),
-            default_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
-            pipeline_depreciation_lifetime=input.pipeline_depreciation_lifetime(),
-            non_lpp_depreciation_lifetime=input.non_lpp_depreciation_lifetime(),
-            gas_generation_cost_per_therm_init=input.gas_generation_cost_per_therm_init(),
-            num_users_init=input.gas_num_users_init(),
-            per_user_heating_need_therms=input.per_user_heating_need_therms(),
-            per_user_water_heating_need_therms=input.per_user_water_heating_need_therms(),
-            user_bill_fixed_charge=input.gas_user_bill_fixed_charge(),
-            pipeline_maintenance_cost_pct=input.pipeline_maintenance_cost_pct(),
-            ratebase_init=input.gas_ratebase_init(),
-            ror=input.gas_ror()
+            baseline_non_lpp_ratebase_growth=coerce_input_value(input.baseline_non_lpp_ratebase_growth(), "baseline_non_lpp_ratebase_growth"),
+            default_depreciation_lifetime=coerce_input_value(input.non_lpp_depreciation_lifetime(), "non_lpp_depreciation_lifetime"),
+            pipeline_depreciation_lifetime=coerce_input_value(input.pipeline_depreciation_lifetime(), "pipeline_depreciation_lifetime"),
+            non_lpp_depreciation_lifetime=coerce_input_value(input.non_lpp_depreciation_lifetime(), "non_lpp_depreciation_lifetime"),
+            gas_generation_cost_per_therm_init=coerce_input_value(input.gas_generation_cost_per_therm_init(), "gas_generation_cost_per_therm_init"),
+            num_users_init=coerce_input_value(input.gas_num_users_init(), "gas_num_users_init"),
+            per_user_heating_need_therms=coerce_input_value(input.per_user_heating_need_therms(), "per_user_heating_need_therms"),
+            per_user_water_heating_need_therms=coerce_input_value(input.per_user_water_heating_need_therms(), "per_user_water_heating_need_therms"),
+            user_bill_fixed_charge=coerce_input_value(input.gas_user_bill_fixed_charge(), "gas_user_bill_fixed_charge"),
+            pipeline_maintenance_cost_pct=coerce_input_value(input.pipeline_maintenance_cost_pct(), "pipeline_maintenance_cost_pct"),
+            ratebase_init=coerce_input_value(input.gas_ratebase_init(), "gas_ratebase_init"),
+            ror=coerce_input_value(input.gas_ror(), "gas_ror")
         )
         return gas_params
         
@@ -453,21 +685,21 @@ def server(input, output, session):
     def create_electric_params():
         """Create the parameters object for the model"""
         electric_params = nhp.params.ElectricParams(
-            aircon_peak_kw=input.aircon_peak_kw(),  # peak energy consumption of a household airconditioning unit
-            baseline_non_npa_ratebase_growth=input.baseline_non_npa_ratebase_growth(),
-            default_depreciation_lifetime=input.electric_default_depreciation_lifetime(),
-            grid_upgrade_depreciation_lifetime=input.grid_upgrade_depreciation_lifetime(),
-            distribution_cost_per_peak_kw_increase_init=input.distribution_cost_per_peak_kw_increase_init(),
-            electric_maintenance_cost_pct=input.electric_maintenance_cost_pct(),
-            electricity_generation_cost_per_kwh_init=input.electricity_generation_cost_per_kwh_init(),
-            hp_efficiency=input.hp_efficiency(),
-            water_heater_efficiency=input.water_heater_efficiency(),
-            hp_peak_kw=input.hp_peak_kw(),
-            num_users_init=input.electric_num_users_init(),
-            per_user_electric_need_kwh=input.per_user_electric_need_kwh(),
-            ratebase_init=input.electric_ratebase_init(),
-            user_bill_fixed_charge=input.electric_user_bill_fixed_charge(),
-            ror=input.electric_ror()
+            aircon_peak_kw=coerce_input_value(input.aircon_peak_kw(), "aircon_peak_kw"),  # peak energy consumption of a household airconditioning unit
+            baseline_non_npa_ratebase_growth=coerce_input_value(input.baseline_non_npa_ratebase_growth(), "baseline_non_npa_ratebase_growth"),
+            default_depreciation_lifetime=coerce_input_value(input.electric_default_depreciation_lifetime(), "electric_default_depreciation_lifetime"),
+            grid_upgrade_depreciation_lifetime=coerce_input_value(input.grid_upgrade_depreciation_lifetime(), "grid_upgrade_depreciation_lifetime"),
+            distribution_cost_per_peak_kw_increase_init=coerce_input_value(input.distribution_cost_per_peak_kw_increase_init(), "distribution_cost_per_peak_kw_increase_init"),
+            electric_maintenance_cost_pct=coerce_input_value(input.electric_maintenance_cost_pct(), "electric_maintenance_cost_pct"),
+            electricity_generation_cost_per_kwh_init=coerce_input_value(input.electricity_generation_cost_per_kwh_init(), "electricity_generation_cost_per_kwh_init"),
+            hp_efficiency=coerce_input_value(input.hp_efficiency(), "hp_efficiency"),
+            water_heater_efficiency=coerce_input_value(input.water_heater_efficiency(), "water_heater_efficiency"),
+            hp_peak_kw=coerce_input_value(input.hp_peak_kw(), "hp_peak_kw"),
+            num_users_init=coerce_input_value(input.electric_num_users_init(), "electric_num_users_init"),
+            per_user_electric_need_kwh=coerce_input_value(input.per_user_electric_need_kwh(), "per_user_electric_need_kwh"),
+            ratebase_init=coerce_input_value(input.electric_ratebase_init(), "electric_ratebase_init"),
+            user_bill_fixed_charge=coerce_input_value(input.electric_user_bill_fixed_charge(), "electric_user_bill_fixed_charge"),
+            ror=coerce_input_value(input.electric_ror(), "electric_ror")
         )
         return electric_params
 
@@ -476,15 +708,15 @@ def server(input, output, session):
     def create_shared_params():
         """Create the parameters object for the model"""
         shared_params = nhp.params.SharedParams(
-            cost_inflation_rate=input.cost_inflation_rate(), 
-            real_dollar_discount_rate=input.real_dollar_discount_rate(), 
-            npv_discount_rate=input.npv_discount_rate(),
-            performance_incentive_pct=input.performance_incentive_pct(),
-            incentive_payback_period=input.incentive_payback_period(),
-            construction_inflation_rate=input.construction_inflation_rate(),
-            npa_install_costs_init=input.npa_install_costs_init(),
-            npa_lifetime=input.npa_lifetime(), 
-            start_year=input.start_year()
+            cost_inflation_rate=coerce_input_value(input.cost_inflation_rate(), "cost_inflation_rate"), 
+            real_dollar_discount_rate=coerce_input_value(input.real_dollar_discount_rate(), "real_dollar_discount_rate"), 
+            npv_discount_rate=coerce_input_value(input.npv_discount_rate(), "npv_discount_rate"),
+            performance_incentive_pct=coerce_input_value(input.performance_incentive_pct(), "performance_incentive_pct"),
+            incentive_payback_period=coerce_input_value(input.incentive_payback_period(), "incentive_payback_period"),
+            construction_inflation_rate=coerce_input_value(input.construction_inflation_rate(), "construction_inflation_rate"),
+            npa_install_costs_init=coerce_input_value(input.npa_install_costs_init(), "npa_install_costs_init"),
+            npa_lifetime=coerce_input_value(input.npa_lifetime(), "npa_lifetime"), 
+            start_year=coerce_input_value(input.start_year(), "start_year")
         )
         return shared_params
     @reactive.calc
@@ -503,22 +735,22 @@ def server(input, output, session):
     def create_ts_inputs():
         """Create the time series inputs for the model"""
         web_params = create_web_params()
-        start_year = input.start_year()
-        end_year = input.end_year()
+        start_year = coerce_input_value(input.start_year(), "start_year")
+        end_year = coerce_input_value(input.end_year(), "end_year")
         return nhp.params.load_time_series_params_from_web_params(web_params, start_year, end_year+1)
     
     @reactive.calc
     @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
     def create_scenario_runs():
         """Create the scenario parameters for the model"""
-        start_year = input.start_year()
-        end_year = input.end_year()
+        start_year = coerce_input_value(input.start_year(), "start_year")
+        end_year = coerce_input_value(input.end_year(), "end_year")
         return nhp.model.create_scenario_runs(start_year, end_year+1, ["gas", "electric"], ["capex", "opex"])
 
     # MODEL FUNCTIONS
 
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, ignore_none=False, ignore_init=False)
     def run_model():
         scenario_runs = create_scenario_runs()
         input_params = create_input_params()
@@ -528,7 +760,7 @@ def server(input, output, session):
         return results_all
 
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name, input.show_absolute, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.show_absolute, ignore_none=False, ignore_init=False)
     def return_delta_or_absolute_df():
         results_all = run_model()
         print("results_all type:", type(results_all))
@@ -557,7 +789,7 @@ def server(input, output, session):
         
         return combined_df
     @reactive.calc
-    @reactive.event(input.calculate_btn, input.run_name,  input.show_absolute, ignore_none=False, ignore_init=False)
+    @reactive.event(input.calculate_btn, input.show_absolute, ignore_none=False, ignore_init=False)
     def prep_df_to_plot():
         combined_df = return_delta_or_absolute_df()
         
@@ -588,9 +820,9 @@ def server(input, output, session):
     @render.text
     def utility_revenue_reqs_chart_description():
         if input.show_absolute():
-            return "Utility revenue requirements for gas and electric. These are the revenue requirements for the utility to cover its costs and expenses."
+            return f"Utility revenue requirements for gas and electric. These are the revenue requirements for the utility to cover its costs and expenses. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses."
+          return f"Difference in utility revenue requirements for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. These are the revenue requirements for the utility to cover its costs and expenses. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def volumetric_tariff_chart():
@@ -609,9 +841,9 @@ def server(input, output, session):
     @render.text
     def volumetric_tariff_chart_description():
         if input.show_absolute():
-            return "Volumetric tariffs for gas (therms) and electric (kWh)."
+            return f"Volumetric tariffs for gas (therms) and electric (kWh). All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in volumetric tariffs for gas (therms) and electric (kWh) compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def ratebase_chart():
@@ -620,7 +852,7 @@ def server(input, output, session):
         
         return plot_utility_metric(
             plt_df=df,
-            column="ratebase",
+            column="inflation_adjusted_ratebase",
             title="Ratebase",
             y_label_unit="$",
             y_label_title="Ratebase",
@@ -629,9 +861,9 @@ def server(input, output, session):
     @render.text
     def ratebase_chart_description():
         if input.show_absolute():
-            return "Annual ratebase for gas and electric."
+            return f"Annual ratebase for gas and electric. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in annual ratebase for gas and electric compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
     @render_plotly
     def return_component_chart():
@@ -670,9 +902,9 @@ def server(input, output, session):
     @render.ui
     def nonconverts_bill_per_user_chart_description():
         if input.show_absolute():
-            return ui.HTML("Nonconverts annual bills for gas and electric.")
+            return ui.HTML(f"Nonconverts annual bills for gas and electric. All dollar values are inflation adjusted to {input.start_year()} dollars.")
         else:
-          return create_styled_text("Difference in nonconverts annual bills for gas and electric ", "relative to nonconverts bills in the Business as Usual (BAU) scenario", " where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
+          return create_styled_text(f"Difference in nonconverts annual bills for gas and electric ", f"relative to nonconverts bills in the Business as Usual (BAU) scenario", f" where no NPA projects are implemented. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill. All dollar values are inflation adjusted to {input.start_year()} dollars.")
 
     @render_plotly
     def converts_bill_per_user_chart():
@@ -691,9 +923,9 @@ def server(input, output, session):
     @render.ui
     def converts_bill_per_user_chart_description():
         if input.show_absolute():
-          return ui.HTML("Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project.")
+          return ui.HTML(f"Converts annual bills for gas and electric. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars.")
         else:
-          return create_styled_text("Difference in average annual delivery bills (gas and electric) for converts after electrification ", "relative to a non-converter in the same scenario",". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill.")
+          return create_styled_text(f"Difference in average annual delivery bills (gas and electric) for converts after electrification ", f"relative to a non-converter in the same scenario",f". Because all converts have zero gas usage after the NPA project, the gas chart represents the avoided gas spending. The electric chart includes increased demand after electrification. We do not consider changes to supply rates in any scenario so these should be considered as changes to the delivery portion of the bill. All dollar values are inflation adjusted to {input.start_year()} dollars.")
     
     @render_plotly
     def total_bills_chart_nonconverts_bar():
@@ -725,9 +957,9 @@ def server(input, output, session):
     @render.text
     def total_bills_chart_description_nonconverts():
         if input.show_absolute():
-            return "Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+            return f"Combined annual delivery bills (gas and electric) for converts and nonconverts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented."
+          return f"Difference in annual combined delivery bills (gas and electric) nonconverts compared to the Business as Usual (BAU) scenario where no NPA projects are implemented. All dollar values are inflation adjusted to {input.start_year()} dollars."
         
     @render_plotly
     def total_bills_chart_converts_bar():
@@ -757,26 +989,109 @@ def server(input, output, session):
     @render.text
     def total_bills_chart_description_converts():
         if input.show_absolute():
-            return "Combined annual delivery bills (gas and electric) for converts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project."
+            return f"Combined annual delivery bills (gas and electric) for converts. In the BAU scenario, converters would only be 'scattershot' electrified, meaning they electrified on their own with no NPA project. All dollar values are inflation adjusted to {input.start_year()} dollars."
         else:
-          return "Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario."
+          return f"Difference in annual combined delivery bills (gas and electric) for converts after electrification relative to a non-converter in the same scenario. All dollar values are inflation adjusted to {input.start_year()} dollars."
 
+
+    def collect_input_parameters():
+        """Collect all current input parameter values into a Polars DataFrame"""
+        parameters = []
+        
+        # Collect all inputs from ALL_INPUT_MAPPINGS
+        for input_id, input_data in ALL_INPUT_MAPPINGS.items():
+            try:
+                # Get the input value using getattr
+                input_attr = getattr(input, input_id, None)
+                if input_attr is not None:
+                    value = input_attr()
+                    
+                    # Convert None to empty string for CSV
+                    if value is None:
+                        value = ""
+                    
+                    # Get config path as string
+                    config_path_str = " > ".join(input_data.get("config_path", []))
+                    
+                    parameters.append({
+                        "parameter_name": input_id,
+                        "label": input_data.get("label", input_id),
+                        "value": value,
+                        "type": str(input_data.get("type", "").__name__) if input_data.get("type") else "",
+                        "config_path": config_path_str
+                    })
+            except (AttributeError, TypeError, Exception):
+                # Skip if input doesn't exist or can't be accessed
+                continue
+        
+        # Add metadata parameters
+        try:
+            parameters.append({
+                "parameter_name": "run_name",
+                "label": "Selected scenario/run name",
+                "value": input.run_name(),
+                "type": "str",
+                "config_path": "metadata"
+            })
+        except Exception:
+            pass
+        
+        try:
+            npa_range = input.npa_year_range()
+            if isinstance(npa_range, list):
+                parameters.append({
+                    "parameter_name": "npa_year_range",
+                    "label": "NPA year range",
+                    "value": f"{npa_range[0]}-{npa_range[1]}",
+                    "type": "list",
+                    "config_path": "metadata"
+                })
+        except Exception:
+            pass
+        
+        # Create DataFrame
+        if parameters:
+            return pl.DataFrame(parameters)
+        else:
+            return pl.DataFrame({
+                "parameter_name": [],
+                "label": [],
+                "value": [],
+                "type": [],
+                "config_path": []
+            })
 
     @render.download(
-        filename=lambda: f'{input.run_name()}_data.csv',
-        media_type="text/csv"
+        filename=lambda: f'{input.run_name()}_data.zip',
+        media_type="application/zip"
     )
     def download_data():
+        # Get results DataFrame
         df_to_download = return_delta_or_absolute_df()
-
-        # Use BytesIO buffer to capture CSV output
-
-        buffer = io.BytesIO()
-        df_to_download.write_csv(buffer)
-        buffer.seek(0)
         
-        # Yield the buffer content
-        yield buffer.getvalue()
+        # Get parameters DataFrame
+        params_df = collect_input_parameters()
+        
+        # Create zip file in memory
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Write results CSV
+            results_buffer = io.BytesIO()
+            df_to_download.write_csv(results_buffer)
+            results_buffer.seek(0)
+            zip_file.writestr("results.csv", results_buffer.getvalue())
+            
+            # Write parameters CSV
+            params_buffer = io.BytesIO()
+            params_df.write_csv(params_buffer)
+            params_buffer.seek(0)
+            zip_file.writestr("parameters.csv", params_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Yield the zip file content
+        yield zip_buffer.getvalue()
 
     # Custom bookmark button handler
     @reactive.effect
@@ -788,5 +1103,26 @@ def server(input, output, session):
     @session.bookmark.on_bookmarked
     async def _(url: str):
         await session.bookmark.update_query_string(url)
+
+    # User warnings
+    @reactive.effect
+    def check_npa_hh_warning():
+        """Warn if NPA households per year exceeds initial gas users"""
+        # Access inputs to establish reactive dependencies
+        npa_projects = input.npa_projects_per_year()
+        num_converts = input.num_converts_per_project()
+        gas_users_init = input.gas_num_users_init()
+        npa_years = input.npa_year_range()[1] - input.npa_year_range()[0]
+        
+        # Only check if all values are valid (not None)
+        if (npa_projects is not None and num_converts is not None and gas_users_init is not None):
+            npa_hh_per_year = npa_projects * num_converts
+            
+            if npa_hh_per_year * npa_years > gas_users_init:
+                ui.notification_show(
+                    f"Warning: Total NPA households ({npa_hh_per_year * npa_years:,.0f}) exceeds initial gas users ({gas_users_init:,.0f}). This may lead to unrealistic results.",
+                    duration=10,
+                    type="warning"
+                )
 
 app = App(app_ui, server, bookmark_store="url")

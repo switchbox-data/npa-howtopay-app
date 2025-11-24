@@ -500,7 +500,7 @@ wheels = [
 [[package]]
 name = "npa-howtopay"
 version = "0.0.1"
-source = { git = "https://github.com/switchbox-data/npa-howtopay.git?rev=main#1be57eedb14aec5002879d8ad2563954be4df8e1" }
+source = { git = "https://github.com/switchbox-data/npa-howtopay.git?rev=main#6c9333cbcb1ac92dcbc05a34718f2c7785036b92" }
 dependencies = [
     { name = "attrs" },
     { name = "matplotlib" },

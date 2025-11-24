@@ -75,7 +75,7 @@ narwhals==2.2.0
     # via
     #   plotly
     #   shiny
-npa-howtopay @ git+https://github.com/switchbox-data/npa-howtopay.git@1be57eedb14aec5002879d8ad2563954be4df8e1
+npa-howtopay @ git+https://github.com/switchbox-data/npa-howtopay.git@6c9333cbcb1ac92dcbc05a34718f2c7785036b92
     # via npa-howtopay-app
 numpy==2.3.2
     # via
